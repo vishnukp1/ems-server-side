@@ -27,7 +27,7 @@ router.get("/company/users/:id",tryCatch(getStaff))
 router.put("/company/users/:id",tryCatch(updateStaff))
 router.delete("/company/users/:id",tryCatch(deleteStaff))
 router.post("/company/task/:id",tryCatch(addTask))
-router.get("/company/staff/tasks", tryCatch(getStaffsTasks));
+router.get("/company/staff/tasks", getStaffsTasks);
 router.post("/company/performance/:id",tryCatch(addPerformance))
 router.post("/company/attendance/:id",tryCatch( addAttendance ))
 router.post("/company/leave/:id",tryCatch(addLeave))
