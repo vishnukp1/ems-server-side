@@ -60,11 +60,14 @@ const StaffSchema = new mongoose.Schema({
           toDate: Date,
           reason: String,
           status: String,
+          description: String,
+          applyOn: Date,
         }
       ],
     
       tasks: [
         {
+          name:String,
           title: String,
           startTime: Date,
           endTime: Date,

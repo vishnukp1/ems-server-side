@@ -73,10 +73,9 @@ const deleteStaff = async (req,res) =>{
 }
 
 
-
 const addTask = async (req, res) => {
 
-  const { title, startTime, endTime, status } = req.body;
+  const { title, startTime, endTime, status,name } = req.body;
 
   
     const staff = await staffSchema.findById(req.params.id);
@@ -89,6 +88,7 @@ const addTask = async (req, res) => {
       startTime: startTime,
       endTime: endTime,
       status: status,
+      name:name,
     });
 
     await staff.save();
@@ -96,32 +96,119 @@ const addTask = async (req, res) => {
 
 };
 
-const getStaffsTasks = async (req, res) => {
+const getTaskById = async (req, res) => {
+  const { staffId, taskId } = req.params;
 
-    const allTasks = await staffSchema.aggregate([
-      {
-        $project: {
-          tasks: "$tasks"
-        }
-      },
-      {
-        $unwind: "$tasks"
-      },
-      {
-        $group: {
-          _id: null,
-          tasks: { $push: "$tasks" }
-        }
-      }
-    ]);
-
-    if (allTasks.length > 0) {
-      res.json({ tasks: allTasks[0].tasks });
-    } else {
-      res.json({ tasks: [] });
+  try {
+    const staff = await staffSchema.findById(staffId);
+    if (!staff) {
+      return res.status(404).json({ error: "Staff not found" });
     }
-  
+
+    const task = staff.tasks.id(taskId); 
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    res.json({ task });
+  } catch (error) {
+    console.error("Error fetching task:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
+
+
+
+
+
+  const getStaffsTasks = async (req, res) => {
+    try {
+      const staffsWithTasks = await staffSchema.aggregate([
+        {
+          $unwind: "$tasks"
+        },
+        {
+          $project: {
+            _id: 0,
+            staffId: "$_id",
+            name: "$name",
+            taskId: "$tasks._id",
+            taskTitle: "$tasks.title",
+            startTime: "$tasks.startTime",
+            endTime: "$tasks.endTime",
+            status: "$tasks.status"
+          }
+        }
+      ]);
+  
+      if (staffsWithTasks.length > 0) {
+        res.json({ tasks: staffsWithTasks });
+      } else {
+        res.json({ tasks: [] });
+      }
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  };
+ 
+  
+const deleteTask = async (req, res) => {
+  const { taskId } = req.params; // Assuming taskId is part of the route params
+
+  try {
+    const staff = await staffSchema.findById(req.params.id);
+    if (!staff) {
+      return res.status(404).json({ error: "Staff not found" });
+    }
+
+    const taskIndex = staff.tasks.findIndex(task => task._id.toString() === taskId);
+
+    if (taskIndex === -1) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    staff.tasks.splice(taskIndex, 1);
+    await staff.save();
+
+    res.json({ message: "Task deleted successfully", staff });
+  } catch (error) {
+    console.error("Error deleting task:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const updateTask = async (req, res) => {
+  const { staffId, taskId } = req.params;
+  const { title, startTime, endTime, status, name } = req.body;
+
+  try {
+    const updatedTask = await staffSchema.findOneAndUpdate(
+      { _id: staffId, 'tasks._id': taskId },
+      {
+        $set: {
+          'tasks.$.title': title,
+          'tasks.$.startTime': startTime,
+          'tasks.$.endTime': endTime,
+          'tasks.$.status': status,
+          'tasks.$.name': name,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedTask) {
+      return res.status(404).json({ error: "Task or Staff not found" });
+    }
+
+    res.json({ message: "Task updated successfully", staff: updatedTask });
+  } catch (error) {
+    console.error("Error updating task:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
 
 const addPerformance = async (req, res) => {
   const { date, rating } = req.body;
@@ -278,6 +365,9 @@ module.exports = {
   loginUser,
   getStaffsLeave,
   getStaffsAttendance,
-  getStaffsPerformance
+  getStaffsPerformance,
+  deleteTask, 
+getTaskById,
+updateTask
 
 };
