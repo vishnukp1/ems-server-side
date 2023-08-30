@@ -2,7 +2,7 @@ const express = require("express")
 
 const {
     loginUser,
-    createUser,
+    createstaff,
     getStaff,
     getAllStaff,
     deleteStaff,
@@ -24,11 +24,11 @@ const tryCatch = require("../middleware/tryCatchp");
 const router = express.Router() 
 
 router.post("/company/login",tryCatch(loginUser))
-router.post("/company/createuser",tryCatch(createUser))
-router.get("/company/users",tryCatch(getAllStaff))
-router.get("/company/users/:id",tryCatch(getStaff))
-router.put("/company/users/:id",tryCatch(updateStaff))
-router.delete("/company/users/:id",tryCatch(deleteStaff))
+router.post("/company/createstaff",tryCatch(createstaff))
+router.get("/company/staff",tryCatch(getAllStaff))
+router.get("/company/staff/:id",tryCatch(getStaff))
+router.put("/company/staff/:id",tryCatch(updateStaff))
+router.delete("/company/staff/:id",tryCatch(deleteStaff))
 router.post("/company/task/:id",tryCatch(addTask))
 router.delete('/:id/tasks/:taskId',(deleteTask))
 router.put('/company/:id/task/:taskId',updateTask)

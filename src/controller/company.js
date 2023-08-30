@@ -15,11 +15,11 @@ const loginUser = async (req, res) => {
   const token = jwt.sign({ username: usernameenv }, "admin");
   res.json({
     status: "success",
-    token: token,
+    token: token, //TODO: standardize all response with {status, message, data (if available)}
   });
 };
 
-const createUser = async (req, res) => {
+const createstaff = async (req, res) => {
 
     const { name, password, email, phone, address, imagepath, salary, gender ,position} = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -118,9 +118,6 @@ const getTaskById = async (req, res) => {
 };
 
 
-
-
-
   const getStaffsTasks = async (req, res) => {
     try {
       const staffsWithTasks = await staffSchema.aggregate([
@@ -151,7 +148,7 @@ const getTaskById = async (req, res) => {
       res.status(500).json({ error: "Internal server error" });
     }
   };
- 
+//  TODO: Implement joi validation to all POST,PUT,,PATCH routes
   
 const deleteTask = async (req, res) => {
   const { taskId } = req.params; // Assuming taskId is part of the route params
@@ -184,31 +181,33 @@ const updateTask = async (req, res) => {
 
   try {
     const updatedTask = await staffSchema.findOneAndUpdate(
-      { _id: staffId, 'tasks._id': taskId },
+      {
+        _id: staffId,
+        'tasks._id': taskId
+      },
       {
         $set: {
           'tasks.$.title': title,
           'tasks.$.startTime': startTime,
           'tasks.$.endTime': endTime,
           'tasks.$.status': status,
-          'tasks.$.name': name,
-        },
+        
+        }
       },
       { new: true }
     );
 
-    if (!updatedTask) {
-      return res.status(404).json({ error: "Task or Staff not found" });
+    if (updatedTask) {
+      console.log("Updated Task:", updatedTask);
+      res.json(updatedTask);
+    } else {
+      res.status(404).json({ error: "Task or Staff not found" });
     }
-
-    res.json({ message: "Task updated successfully", staff: updatedTask });
   } catch (error) {
     console.error("Error updating task:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
 
 const addPerformance = async (req, res) => {
   const { date, rating } = req.body;
@@ -233,12 +232,12 @@ const getStaffsPerformance = async (req, res) => {
 
   const allPerformance = await staffSchema.aggregate([
     {
-      $project: {
+      $project: {   
         performance: "$performance"
       }
     },
     {
-      $unwind: "$performance"
+      $unwind: "$performance" 
     },
     {
       $group: {
@@ -352,7 +351,7 @@ const getStaffsLeave = async (req, res) => {
 
 
 module.exports = {
-  createUser,
+  createstaff,
   getStaff,
   getAllStaff,
   updateStaff,

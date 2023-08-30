@@ -11,10 +11,11 @@ app.use(express.json());
 app.use(cors());
 app.use(morgan());
 
-// mongodb://127.0.0.1:27017/mainproject1
+// mongodb+srv://vishnutoanother:TJY72CMzB5zAq3ZE@cluster0.00v8gqd.mongodb.net/
+
 
 mongoose
-  .connect("mongodb+srv://vishnutoanother:TJY72CMzB5zAq3ZE@cluster0.00v8gqd.mongodb.net/", {
+  .connect("mongodb://127.0.0.1:27017/mainproject1", {
     useNewUrlParser: true,
 
     useUnifiedTopology: true,
@@ -30,4 +31,4 @@ mongoose
 
 app.listen(4444,()=>{
     console.log("server running 4444"); 
-}) 
+})  
