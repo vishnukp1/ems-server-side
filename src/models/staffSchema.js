@@ -23,7 +23,7 @@ const StaffSchema = new mongoose.Schema({
          required:false
      },
      imagepath:{
-        type:String,
+        type:Array,
         default: "Default Name",
        },
       address:{
@@ -67,11 +67,10 @@ const StaffSchema = new mongoose.Schema({
     
       tasks: [
         {
-          name:String,
           title: String,
           startTime: Date,
           endTime: Date,
-          status: String, 
+          status: String
         }
       ],
      

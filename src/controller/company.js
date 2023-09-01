@@ -21,15 +21,16 @@ const loginUser = async (req, res) => {
 
 const createstaff = async (req, res) => {
 
-    const { name, password, email, phone, address, imagepath, salary, gender ,position} = req.body;
+    const { name, password, email, phone, address,  salary, gender ,position} = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log(req.file);
     const staff = new staffSchema({
       name: name,
       password: hashedPassword,
       phone: phone,
       email: email,
       address: address,
-      imagepath: imagepath,
+      imagepath: req.file,
       salary: salary,
       gender: gender,
       address:address,
@@ -75,7 +76,7 @@ const deleteStaff = async (req,res) =>{
 
 const addTask = async (req, res) => {
 
-  const { title, startTime, endTime, status,name } = req.body;
+  const { title, startTime, endTime, status} = req.body;
 
   
     const staff = await staffSchema.findById(req.params.id);
@@ -88,7 +89,7 @@ const addTask = async (req, res) => {
       startTime: startTime,
       endTime: endTime,
       status: status,
-      name:name,
+      
     });
 
     await staff.save();
@@ -99,7 +100,7 @@ const addTask = async (req, res) => {
 const getTaskById = async (req, res) => {
   const { staffId, taskId } = req.params;
 
-  try {
+  
     const staff = await staffSchema.findById(staffId);
     if (!staff) {
       return res.status(404).json({ error: "Staff not found" });
@@ -111,16 +112,12 @@ const getTaskById = async (req, res) => {
     }
 
     res.json({ task });
-  } catch (error) {
-    console.error("Error fetching task:", error);
-    res.status(500).json({ error: "Internal server error" });
+
   }
-};
 
-
-  const getStaffsTasks = async (req, res) => {
+  const getAllTasks = async (req, res) => {
     try {
-      const staffsWithTasks = await staffSchema.aggregate([
+      const allStaffsTasks = await staffSchema.aggregate([
         {
           $unwind: "$tasks"
         },
@@ -138,23 +135,28 @@ const getTaskById = async (req, res) => {
         }
       ]);
   
-      if (staffsWithTasks.length > 0) {
-        res.json({ tasks: staffsWithTasks });
+      if (allStaffsTasks.length > 0) {
+        res.json({ tasks: allStaffsTasks });
       } else {
         res.json({ tasks: [] });
       }
     } catch (error) {
-      console.error("Error fetching tasks:", error);
-      res.status(500).json({ error: "Internal server error" });
+      console.error(error);
+      res.status(500).json({ error: "An error occurred while fetching tasks." });
     }
   };
+
+ 
+    
+
+  
 //  TODO: Implement joi validation to all POST,PUT,,PATCH routes
   
 const deleteTask = async (req, res) => {
   const { taskId } = req.params; // Assuming taskId is part of the route params
 
-  try {
-    const staff = await staffSchema.findById(req.params.id);
+ 
+    const staff = await staffSchema.findById(req.params.id); 
     if (!staff) {
       return res.status(404).json({ error: "Staff not found" });
     }
@@ -169,17 +171,13 @@ const deleteTask = async (req, res) => {
     await staff.save();
 
     res.json({ message: "Task deleted successfully", staff });
-  } catch (error) {
-    console.error("Error deleting task:", error);
-    res.status(500).json({ error: "Internal server error" });
   }
-};
 
 const updateTask = async (req, res) => {
   const { staffId, taskId } = req.params;
   const { title, startTime, endTime, status, name } = req.body;
 
-  try {
+
     const updatedTask = await staffSchema.findOneAndUpdate(
       {
         _id: staffId,
@@ -203,11 +201,7 @@ const updateTask = async (req, res) => {
     } else {
       res.status(404).json({ error: "Task or Staff not found" });
     }
-  } catch (error) {
-    console.error("Error updating task:", error);
-    res.status(500).json({ error: "Internal server error" });
   }
-};
 
 const addPerformance = async (req, res) => {
   const { date, rating } = req.body;
@@ -360,13 +354,14 @@ module.exports = {
   addPerformance,
   addAttendance ,
   addLeave,
-  getStaffsTasks,
+
   loginUser,
   getStaffsLeave,
   getStaffsAttendance,
   getStaffsPerformance,
   deleteTask, 
 getTaskById,
-updateTask
+updateTask,
+getAllTasks
 
 };
