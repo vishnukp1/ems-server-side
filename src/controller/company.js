@@ -55,6 +55,12 @@ const getStaff = async (req,res) =>{
   res.json(staff)
 }
 
+const searchStaffByName = async (req, res) => {
+    const { name } = req.query; 
+    const search = await staffSchema.find({ name: { $regex: new RegExp(name, "i") } });
+    res.json(search);
+  }
+
 const updateStaff = async (req,res) => {
 const updatedstaff = await staffSchema.findByIdAndUpdate(
   req.params.id,
@@ -116,7 +122,7 @@ const getTaskById = async (req, res) => {
   }
 
   const getAllTasks = async (req, res) => {
-    try {
+    
       const allStaffsTasks = await staffSchema.aggregate([
         {
           $unwind: "$tasks"
@@ -140,17 +146,58 @@ const getTaskById = async (req, res) => {
       } else {
         res.json({ tasks: [] });
       }
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "An error occurred while fetching tasks." });
     }
-  };
+  
 
  
     
 
   
 //  TODO: Implement joi validation to all POST,PUT,,PATCH routes
+
+
+const searchTaskByName = async (req, res) => {
+  try {
+    const { name } = req.query; // Assuming the search query is provided as a query parameter
+
+    // Use a regular expression to perform a case-insensitive search by name
+    const searchResults = await staffSchema.aggregate([
+      {
+        $match: {
+          name: { $regex: new RegExp(name, "i") }, // Match staff by name
+        },
+      },
+      {
+        $unwind: "$tasks",
+      },
+      {
+        $project: {
+          _id: 0,
+          staffId: "$_id",
+          name: "$name",
+          taskId: "$tasks._id",
+          taskTitle: "$tasks.title",
+          startTime: "$tasks.startTime",
+          endTime: "$tasks.endTime",
+          status: "$tasks.status",
+        },
+      },
+    ]);
+
+    res.json({ tasks: searchResults });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+
+
+
+
+
+
   
 const deleteTask = async (req, res) => {
   const { taskId } = req.params; // Assuming taskId is part of the route params
@@ -348,13 +395,13 @@ module.exports = {
   createstaff,
   getStaff,
   getAllStaff,
+  searchStaffByName,
   updateStaff,
   deleteStaff,
   addTask,
   addPerformance,
   addAttendance ,
   addLeave,
-
   loginUser,
   getStaffsLeave,
   getStaffsAttendance,
@@ -362,6 +409,7 @@ module.exports = {
   deleteTask, 
 getTaskById,
 updateTask,
-getAllTasks
+getAllTasks,
+searchTaskByName
 
 };
