@@ -8,8 +8,6 @@ const tryCatch = (controller) =>{
                 message:"something went wrong",
                 error_message: error.message,
             })
-        
-
             }
         }
     }

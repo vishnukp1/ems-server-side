@@ -51,9 +51,12 @@ const StaffSchema = new mongoose.Schema({
         {
           date: Date,
           status: String,
+          timeIn:Date,
+          timeOut:Date,
+          totalWorkingTime:String,
         }
       ],
-    
+      
       leaves: [
         {
           fromDate: Date,

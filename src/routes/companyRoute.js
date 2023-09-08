@@ -1,7 +1,6 @@
 const express = require("express")
 
 const {
-    
     loginUser,
     createstaff,
     getStaff,
@@ -20,11 +19,12 @@ const {
     updateTask,
     getTaskById,
     getAllTasks,
-    searchTaskByName
+    searchTaskByName,
+    addTimeInTimeOut,
+    markAttendance
 } = require("../controller/company");
 const tryCatch = require("../middleware/tryCatchp");
 const upload = require('../middleware/multer.js')
-
 const router = express.Router() 
 
 router.post("/company/login",tryCatch(loginUser))
@@ -40,12 +40,14 @@ router.delete('/:id/tasks/:taskId',tryCatch(deleteTask))
 router.put('/company/:id/task/:taskId',updateTask)
 router.get('/company/:staffId/task/:taskId', getTaskById); 
 router.post("/company/performance/:id",tryCatch(addPerformance))
-router.post("/company/attendance/:id",tryCatch( addAttendance )) 
+router.post("/company/attendance/:id",addAttendance );
+router.post("/company/time/:id",tryCatch( addTimeInTimeOut ))
 router.post("/company/leave/:id",tryCatch(addLeave))
 router.post("/company/performance",tryCatch(getStaffsPerformance))
 router.get("/company/attendance",tryCatch(getStaffsAttendance))
 router.get("/company/leave",tryCatch(getStaffsLeave))
 router.get("/company/alltasks",tryCatch(getAllTasks))
+router.post("/mark",tryCatch(markAttendance))
 
 
 module.exports = router;
