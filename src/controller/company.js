@@ -3,26 +3,49 @@ const bcrypt = require("bcrypt");
 const staffSchema = require("../models/staffSchema");
 const cloudinary = require ("../uploadImg")
 require("dotenv").config();
+const companySchema = require("../models/companySchema")
 
-const loginUser = async (req, res) => {
-  const { username, password } = req.body;
-  const usernameenv = process.env.adminUserName;
-  const passwordenv = process.env.adminPassword;
+const registerCompany = async (req, res) => {
 
-  if (username !== usernameenv || password !== passwordenv) {
-    return res.send("Username and password do not match"); 
-  }    
+  const { name, password, email, phone, company} = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newcompany = new companySchema({
+    name: name,
+    email: email,
+    password: hashedPassword,
+    
+   company:company,
+    phone: phone,
+  
+    full:true
 
-  const token = jwt.sign({ username: usernameenv }, "admin");
-  res.json({
-    status: "success",
-    token: token, //TODO: standardize all response with {status, message, data (if available)}
   });
+
+  await newcompany.save();
+
+  res.json({ message: "company registered successfully", company });
+
 };
 
+const loginUser = async (req, res) => {
+ 
+ 
+    const {email , password } = req.body;
+  
+      const user = await companySchema.findOne( {email} );
+      if (!user) {
+        return res.status(401).json({ error: "Invalid username" });
+      }
+      if (!(await bcrypt.compare(password, user.password))) {
+        return res.status(401).json({ error: "Invalid password"});
+      }
+      const token = jwt.sign({ username: user.username }, "user");
+  
+      res.json({ message: "Login successful", token ,id:user._id});
+    }
 
 const createstaff = async (req, res) => {
-  try {
+  
 
   const { name, password, email, phone, address, salary, gender, position } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -41,7 +64,7 @@ const createstaff = async (req, res) => {
       phone: phone,
       email: email,
       address: address,
-      imagepath: result.secure_url, // Use the secure URL from Cloudinary result
+      imagepath: result.secure_url, 
       salary: salary,
       gender: gender,
       address: address,
@@ -52,11 +75,7 @@ const createstaff = async (req, res) => {
     await staff.save();
     res.json({ message: "User account registered successfully", staff });
   
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error during staff creation" });
   }
-}
 
 
 
@@ -539,6 +558,7 @@ const markAttendance = async (req, res, next) => {
 
 module.exports = {
   createstaff,
+  registerCompany,
   getStaff,
   getAllStaff,
   searchStaffByName,

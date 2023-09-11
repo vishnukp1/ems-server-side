@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const staffSchema = require("../models/staffSchema");
 
 
+
   const createUser = async (req, res) => {
 
     const { name, password, email, phone, address ,} = req.body;
@@ -56,5 +57,6 @@ module.exports = {
     getAllUser,
     updateUser,
    deleteUser,
+
  
   };

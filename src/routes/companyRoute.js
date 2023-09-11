@@ -21,13 +21,15 @@ const {
     getAllTasks,
     searchTaskByName,
     addTimeInTimeOut,
-    markAttendance
+    markAttendance,
+    registerCompany
 } = require("../controller/company");
 const tryCatch = require("../middleware/tryCatchp");
 const upload = require('../middleware/multer.js')
 const router = express.Router() 
 
 router.post("/company/login",tryCatch(loginUser))
+router.post("/company/register",tryCatch(registerCompany))
 router.post("/company/createstaff",upload.single('imagepath'),tryCatch(createstaff))
 router.get("/company/staff",tryCatch(getAllStaff))
 router.get("/company/search",tryCatch(searchStaffByName))
