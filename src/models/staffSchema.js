@@ -18,7 +18,7 @@ const StaffSchema = new mongoose.Schema({
          type:String,
          required:false
      },
-     position:{
+     department:{
          type:String,
          required:false
      },

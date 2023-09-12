@@ -5,15 +5,7 @@ const DepartmentSchema = new mongoose.Schema({
         type:String,
         require:false
        },
-    description:{
-         type:String,
-         required:false,
-         
-     },
-    salary:{
-         type:Number,
-         required:false
-     },
+
 
 })
 
