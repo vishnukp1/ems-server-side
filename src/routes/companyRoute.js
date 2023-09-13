@@ -39,7 +39,7 @@ router.put("/company/staff/:id",tryCatch(updateStaff))
 router.delete("/company/staff/:id",tryCatch(deleteStaff))
 router.post("/company/task/:id",tryCatch(addTask))
 router.delete('/:id/tasks/:taskId',tryCatch(deleteTask))
-router.put('/company/:id/task/:taskId',updateTask)
+router.put('/company/:id/task/:taskId',tryCatch(updateTask))
 router.get('/company/:staffId/task/:taskId', getTaskById); 
 router.get("/company/alltasks",tryCatch(getAllTasks))
 

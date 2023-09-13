@@ -254,32 +254,39 @@ const deleteTask = async (req, res) => {
 };
 
 const updateTask = async (req, res) => {
-  const { staffId, taskId } = req.params;
-  const { title, startTime, endTime, status, name } = req.body;
+  const { id } = req.params;
+  const { taskId } = req.params;
+  const { title, startTime, endTime, status } = req.body;
 
-  const updatedTask = await staffSchema.findOneAndUpdate(
-    {
-      _id: staffId,
-      "tasks._id": taskId,
-    },
-    {
-      $set: {
-        "tasks.$.title": title,
-        "tasks.$.startTime": startTime,
-        "tasks.$.endTime": endTime,
-        "tasks.$.status": status,
+  try {
+    const updatedTask = await staffSchema.findOneAndUpdate(
+      {
+        _id: id,
+        "tasks._id": taskId,
       },
-    },
-    { new: true }
-  );
+      {
+        $set: { 
+          "tasks.$.title": title,
+          "tasks.$.startTime": startTime,
+          "tasks.$.endTime": endTime,
+          "tasks.$.status": status,
+        },
+      },
+      { new: true }
+    );
 
-  if (updatedTask) {
-    console.log("Updated Task:", updatedTask);
-    res.json(updatedTask);
-  } else {
-    res.status(404).json({ error: "Task or Staff not found" });
+    if (updatedTask) {
+      console.log("Updated Task:", updatedTask);
+      res.json(updatedTask);
+    } else {
+      res.status(404).json({ error: "Task or Staff not found" });
+    }
+  } catch (error) {
+    console.error("Error updating task:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 module.exports = {
   createstaff,
