@@ -5,11 +5,17 @@ const cloudinary = require("../uploadImg");
 require("dotenv").config();
 const companySchema = require("../models/companySchema");
 const DepartmentSchema = require("../models/departmentShema");
+const validate = require("../validation/schemaValidation");
+
 
 const registerCompany = async (req, res) => {
-  const { name, password, email, phone, company } = req.body;
+  const { error, value } = validate.companyValidate.validate(req.body);
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
+  const { name, password, email, phone, company } = value;
   const hashedPassword = await bcrypt.hash(password, 10);
-  const newcompany = new companySchema({
+  const user = new companySchema({
     name: name,
     email: email,
     password: hashedPassword,
@@ -20,13 +26,24 @@ const registerCompany = async (req, res) => {
     full: true,
   });
 
-  await newcompany.save();
+  await user.save();
+  const token = jwt.sign({ username: user.username }, "user");
 
-  res.json({ message: "company registered successfully", company });
+  res.status(200).json({
+    status: "success",
+    message: "company created succesfully",
+    data: company,
+    token: token,
+  });
 };
 
 const loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { error, value } = validate.staffValidation.validate(req.body);
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
+
+  const { email, password } = value;
 
   const user = await companySchema.findOne({ email });
   if (!user) {
@@ -68,41 +85,68 @@ const createstaff = async (req, res) => {
   });
 
   await staff.save();
-  res.json({ message: "User account registered successfully", staff });
+  res.status(200).json({
+    message: "User account registered successfully",
+    data: staff,
+    status: "sucees",
+  });
 };
 
 const createdepartment = async (req, res) => {
-  const { title, description, salary } = req.body;
+  const { title } = req.body;
+
+  if (!title) {
+    return res.status(400).json({ error: "title is not added" });
+  }
 
   const department = new DepartmentSchema({
     title: title,
-
     full: true,
   });
 
   await department.save();
 
-  res.json({ message: "Department created successfully", user });
+  res.status(200).json({
+    message: "Department created successfully",
+    data: department,
+    status: "success",
+  });
 };
 
 const getDepartment = async (req, res) => {
   const department = await DepartmentSchema.find();
-  res.json(department);
+  res.status(200).json({
+    message: "Department got successfully",
+    data: department,
+    status: "success",
+  });
 };
 
 const deleteDepartment = async (req, res) => {
   const department = await DepartmentSchema.findByIdAndDelete(req.params.id);
-  res.json(department);
+  res.status(200).json({
+    message: "Department deleted successfully",
+    data: department,
+    status: "success",
+  });
 };
 
 const getAllStaff = async (req, res) => {
   const allStaff = await staffSchema.find();
-  res.json(allStaff);
+  res.status(200).json({
+    message: "Got all staffs successfully",
+    data: allStaff,
+    status: "success",
+  });
 };
 
 const getStaff = async (req, res) => {
   const staff = await staffSchema.findById(req.params.id);
-  res.json(staff);
+  res.status(200).json({
+    message: "Got all staffs successfully",
+    data: staff,
+    status: "success",
+  });
 };
 
 const searchStaffByName = async (req, res) => {
@@ -142,6 +186,9 @@ const deleteStaff = async (req, res) => {
 
 const addTask = async (req, res) => {
   const { title, startTime, endTime, status } = req.body;
+  if (!title || !startTime || !endTime || !status) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
 
   const staff = await staffSchema.findById(req.params.id);
   if (!staff) {
@@ -156,7 +203,11 @@ const addTask = async (req, res) => {
   });
 
   await staff.save();
-  res.json({ message: "Task added to staff successfully", staff });
+  res.status(200).json({
+    message: "Department created successfully",
+    data: staff,
+    status: "success",
+  });
 };
 
 const getTaskById = async (req, res) => {
@@ -195,7 +246,11 @@ const getAllTasks = async (req, res) => {
   ]);
 
   if (allStaffsTasks.length > 0) {
-    res.json({ tasks: allStaffsTasks });
+    res.status(200).json({
+      massage: "Got all tasks",
+      status: "success",
+      tasks: allStaffsTasks,
+    });
   } else {
     res.json({ tasks: [] });
   }
@@ -265,7 +320,7 @@ const updateTask = async (req, res) => {
         "tasks._id": taskId,
       },
       {
-        $set: { 
+        $set: {
           "tasks.$.title": title,
           "tasks.$.startTime": startTime,
           "tasks.$.endTime": endTime,
@@ -288,6 +343,7 @@ const updateTask = async (req, res) => {
 };
 
 
+
 module.exports = {
   createstaff,
   registerCompany,
@@ -307,4 +363,5 @@ module.exports = {
   getDepartment,
   deleteDepartment,
   searchDepartment,
+
 };

@@ -8,14 +8,14 @@ const adminValidate = Joi.object({
 });
 
 const companyValidate = Joi.object({
-  name: Joi.string().optional(),
+  name: Joi.string().required(),
   password: Joi.string().pattern(new RegExp("^[a-zA-Z0-9]{3,30}$")).required(),
-  email: Joi.string().email().optional(),
+  email: Joi.string().email().required(),
   phone: Joi.string(),
   company: Joi.string(),
 });
 
-const staffValidationSchema = Joi.object({
+const staffValidation = Joi.object({
   name: Joi.string().optional(),
   password: Joi.string().pattern(new RegExp("^[a-zA-Z0-9]{3,30}$")).required(),
   email: Joi.string().email().optional(),
@@ -67,4 +67,4 @@ const staffValidationSchema = Joi.object({
   ),
 });
 
-module.exports = { companyValidate, adminValidate, userValidate };
+module.exports = { companyValidate, adminValidate, staffValidation};
