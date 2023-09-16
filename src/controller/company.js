@@ -1,3 +1,4 @@
+const fs = require("fs")
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const staffSchema = require("../models/staffSchema");
@@ -5,8 +6,9 @@ const cloudinary = require("../uploadImg");
 require("dotenv").config();
 const companySchema = require("../models/companySchema");
 const DepartmentSchema = require("../models/departmentShema");
+const nodemailer = require("nodemailer"); // Import the nodemailer library
+const randomstring = require("randomstring");
 const validate = require("../validation/schemaValidation");
-
 
 const registerCompany = async (req, res) => {
   const { error, value } = validate.companyValidate.validate(req.body);
@@ -58,39 +60,82 @@ const loginUser = async (req, res) => {
 };
 
 const createstaff = async (req, res) => {
-  const { name, password, email, phone, address, salary, gender, department } =
-    req.body;
-  const hashedPassword = await bcrypt.hash(password, 10);
+  try {
+    const { name, email, phone, address, salary, gender, department } = req.body;
 
-  const result = await cloudinary.uploader.upload(req.file.path, {
-    public_id: `${staffSchema._id}_profile`,
-    // width: 500,
-    // height: 500,
-    // crop: 'fill',
-  });
+   
+    const password = randomstring.generate(8);
 
-  console.log("result", result);
-  const staff = new staffSchema({
-    name: name,
-    password: hashedPassword,
-    phone: phone,
-    email: email,
-    address: address,
-    imagepath: result.secure_url,
-    salary: salary,
-    gender: gender,
-    address: address,
-    department: department,
-    full: true,
-  });
+  
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  await staff.save();
-  res.status(200).json({
-    message: "User account registered successfully",
-    data: staff,
-    status: "sucees",
-  });
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      public_id: `${staffSchema._id}_profile`,
+    });
+
+  
+    fs.unlinkSync(req.file.path);
+
+    const staff = new staffSchema({
+      name: name,
+      password: hashedPassword,
+      phone: phone,
+      email: email,
+      address: address,
+      imagepath: result.secure_url,
+      salary: salary,
+      gender: gender,
+      address: address,
+      department: department,
+    });
+
+    await staff.save();
+console.log(process.env.email);
+  
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.email,
+        pass: process.env.password,
+      },
+    });
+    
+   
+    const mailOptions = {
+      from: process.env.email,
+      to: email, 
+      subject: "Your New Password",
+      text: `Your new password is: ${password}`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Error sending email:", error);
+        res.status(500).json({
+          status: "error",
+          message: "Email could not be sent",
+          error: error.message,
+        });
+      } else {
+        console.log("Email sent:", info.response);
+        res.status(200).json({
+          status: "success",
+          message: "Staff created successfully",
+          data: staff,
+          generatedPassword: password,
+        });
+      }
+    });
+    
+  } catch (error) {
+    console.error("Error creating staff:", error);
+    res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
 };
+
 
 const createdepartment = async (req, res) => {
   const { title } = req.body;
@@ -342,7 +387,123 @@ const updateTask = async (req, res) => {
   }
 };
 
+const markattendance = async (req, res) => {
+  try {
+    const selectedStaffIds = req.body.selectedStaff;
+    const attendanceStatus = req.body.status;
+    const attendanceDate = new Date();
 
+    for (const staffId of selectedStaffIds) {
+      const staff = await staffSchema.findById(staffId);
+
+      if (!staff) {
+        return res
+          .status(404)
+          .json({ message: `Staff with ID ${staffId} not found` });
+      }
+
+      const existingAttendanceRecord = staff.attendance.find(
+        (record) => record.date.toDateString() === attendanceDate.toDateString()
+      );
+
+      if (existingAttendanceRecord) {
+        existingAttendanceRecord.status = attendanceStatus;
+      } else {
+        const newAttendanceRecord = {
+          date: attendanceDate,
+          status: attendanceStatus,
+        };
+
+        staff.attendance.push(newAttendanceRecord);
+      }
+
+      await staff.save();
+    }
+
+    res.status(200).json({
+      message: "Attendance marked successfully",
+      status: "success",
+    });
+  } catch (error) {
+    console.error("Error marking attendance:", error);
+    res.status(500).json({ message: "Error marking attendance" });
+  }
+};
+
+const updateAttendance = async (req, res) => {
+  try {
+    const staffId = req.params.staffId;
+    const attendanceDate = new Date(req.body.date);
+    const attendanceStatus = req.body.status;
+
+    const staff = await staffSchema.findById(staffId);
+
+    if (!staff) {
+      return res
+        .status(404)
+        .json({ message: `Staff with ID ${staffId} not found` });
+    }
+
+    const attendanceRecord = staff.attendance.find(
+      (record) => record.date.toDateString() === attendanceDate.toDateString()
+    );
+
+    if (attendanceRecord) {
+      attendanceRecord.status = attendanceStatus;
+      await staff.save();
+
+      return res.status(200).json({
+        message: "Attendance updated successfully",
+        status: "success",
+        data: staff,
+      });
+    } else {
+      return res.status(404).json({
+        message: `No attendance record found for date: ${attendanceDate}`,
+      });
+    }
+  } catch (error) {
+    console.error("Error updating attendance:", error);
+    res.status(500).json({ message: "Error updating attendance" });
+  }
+};
+
+const deleteAttendance = async (req, res) => {
+  try {
+    const staffId = req.params.staffId;
+    const attendanceDate = new Date(req.body.date);
+
+    const staff = await staffSchema.findById(staffId);
+
+    if (!staff) {
+      return res
+        .status(404)
+        .json({ message: `Staff with ID ${staffId} not found` });
+    }
+
+    const attendanceIndex = staff.attendance.findIndex(
+      (record) => record.date.toDateString() === attendanceDate.toDateString()
+    );
+
+    if (attendanceIndex !== -1) {
+      staff.attendance.splice(attendanceIndex, 1);
+      await staff.save();
+
+      return res.status(200).json({
+        message: "Attendance deleted successfully",
+        status: "success",
+        data: staff,
+      });
+    } else {
+      return res.status(404).json({
+        message: `No attendance record found for date: ${attendanceDate}`,
+      });
+    }
+  } catch (error) {
+    console.error("Error deleting attendance:", error);
+    res.status(500).json({ message: "Error deleting attendance" });
+  }
+};
 
 module.exports = {
   createstaff,
@@ -363,5 +524,7 @@ module.exports = {
   getDepartment,
   deleteDepartment,
   searchDepartment,
-
+  markattendance,
+  updateAttendance,
+  deleteAttendance,
 };

@@ -19,7 +19,9 @@ const {
     getDepartment,
     deleteDepartment,
     searchDepartment,
-    // markattendance,
+    markattendance,
+    updateAttendance,
+    deleteAttendance,
     
 } = require("../controller/company");
 const tryCatch = require("../middleware/tryCatchp");
@@ -44,6 +46,8 @@ router.delete('/:id/tasks/:taskId',tryCatch(deleteTask))
 router.put('/company/:id/task/:taskId',tryCatch(updateTask))
 router.get('/company/:staffId/task/:taskId', getTaskById); 
 router.get("/company/alltasks",tryCatch(getAllTasks))
-// router.post("/company/mark",tryCatch(markattendance))
+router.post("/company/mark",tryCatch(markattendance))
+router.put('/updateAttendance/:staffId', tryCatch(updateAttendance));
+router.delete('/deleteAttendance/:staffId', tryCatch(deleteAttendance));
 
 module.exports = router;

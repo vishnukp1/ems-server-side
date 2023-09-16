@@ -20,7 +20,7 @@ const StaffSchema = new mongoose.Schema({
      },
      department:{
          type:String,
-         required:false
+         required:false //TODO : give relation to department schema
      },
      imagepath:{
         type:Array,
@@ -50,7 +50,7 @@ const StaffSchema = new mongoose.Schema({
       attendance: [
         {
           date: Date,
-          status: String,
+          status: String ,
           timeIn:Date,
           timeOut:Date,
           totalWorkingTime:String,
