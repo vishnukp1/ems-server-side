@@ -22,6 +22,11 @@ const {
     markattendance,
     updateAttendance,
     deleteAttendance,
+   
+    applyLeave,
+    approveleave,
+    getleaveRequest,
+ 
     
 } = require("../controller/company");
 const tryCatch = require("../middleware/tryCatchp");
@@ -49,5 +54,9 @@ router.get("/company/alltasks",tryCatch(getAllTasks))
 router.post("/company/mark",tryCatch(markattendance))
 router.put('/updateAttendance/:staffId', tryCatch(updateAttendance));
 router.delete('/deleteAttendance/:staffId', tryCatch(deleteAttendance));
+router.post("/applyleave/:id",tryCatch(applyLeave))
+router.put("/leave/approve/:leaveId",tryCatch(approveleave))
+router.get("/leaves/:date",tryCatch(getleaveRequest))
+
 
 module.exports = router;

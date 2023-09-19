@@ -18,10 +18,12 @@ const StaffSchema = new mongoose.Schema({
          type:String,
          required:false
      },
-     department:{
-         type:String,
-         required:false //TODO : give relation to department schema
-     },
+     department:[
+      {
+        ref: "department",
+        type: mongoose.Schema.Types.ObjectId,
+      },
+    ],
      imagepath:{
         type:Array,
         default: "Default Name",
@@ -51,20 +53,14 @@ const StaffSchema = new mongoose.Schema({
         {
           date: Date,
           status: String ,
-          timeIn:Date,
-          timeOut:Date,
-          totalWorkingTime:String,
+    
         }
       ],
       
       leaves: [
         {
-          fromDate: Date,
-          toDate: Date,
-          reason: String,
-          status: String,
-          description: String,
-          applyOn: Date,
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Leave",
         }
       ],
     

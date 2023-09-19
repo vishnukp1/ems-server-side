@@ -5,10 +5,11 @@ const staffSchema = require("../models/staffSchema");
 const cloudinary = require("../uploadImg");
 require("dotenv").config();
 const companySchema = require("../models/companySchema");
-const DepartmentSchema = require("../models/departmentShema");
+const DepartmentSchema = require("../models/dpartmentSchema"); 
 const nodemailer = require("nodemailer"); // Import the nodemailer library
 const randomstring = require("randomstring");
 const validate = require("../validation/schemaValidation");
+const Leave = require("../models/leaveSchema")
 
 const registerCompany = async (req, res) => {
   const { error, value } = validate.companyValidate.validate(req.body);
@@ -60,21 +61,38 @@ const loginUser = async (req, res) => {
 };
 
 const createstaff = async (req, res) => {
-  try {
+
     const { name, email, phone, address, salary, gender, department } = req.body;
 
-   
+ 
     const password = randomstring.generate(8);
 
-  
+   
     const hashedPassword = await bcrypt.hash(password, 10);
 
+
     const result = await cloudinary.uploader.upload(req.file.path, {
-      public_id: `${staffSchema._id}_profile`,
+     
+        public_id: `${name.replace(/\s+/g, "_").toLowerCase()}_profile`, 
+    
+      
     });
 
-  
+    
     fs.unlinkSync(req.file.path);
+
+     let departmentObj = null;
+    if (department) {
+      departmentObj = await DepartmentSchema.findOne({ title: department });
+      if (!departmentObj) {
+        departmentObj = new DepartmentSchema({ title: department });
+        await departmentObj.save();
+      }
+    }
+
+   
+ 
+console.log("dptobj",departmentObj);
 
     const staff = new staffSchema({
       name: name,
@@ -85,56 +103,52 @@ const createstaff = async (req, res) => {
       imagepath: result.secure_url,
       salary: salary,
       gender: gender,
-      address: address,
-      department: department,
+      department: departmentObj ? departmentObj._id : null,
     });
 
+    
     await staff.save();
-console.log(process.env.email);
-  
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.email,
-        pass: process.env.password,
-      },
-    });
-    
-   
-    const mailOptions = {
-      from: process.env.email,
-      to: email, 
-      subject: "Your New Password",
-      text: `Your new password is: ${password}`,
-    };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error("Error sending email:", error);
-        res.status(500).json({
-          status: "error",
-          message: "Email could not be sent",
-          error: error.message,
-        });
-      } else {
-        console.log("Email sent:", info.response);
-        res.status(200).json({
-          status: "success",
-          message: "Staff created successfully",
-          data: staff,
-          generatedPassword: password,
-        });
-      }
-    });
-    
-  } catch (error) {
-    console.error("Error creating staff:", error);
-    res.status(500).json({
-      status: "error",
-      message: "Internal server error",
-    });
-  }
-};
+   res.json({staff})
+
+    // Create a transporter for sending emails
+    // const transporter = nodemailer.createTransport({
+    //   service: "gmail",
+    //   auth: {
+    //     user: process.env.email,
+    //     pass: process.env.password,
+    //   },
+    // });
+
+    // // Define email content
+    // const mailOptions = {
+    //   from: process.env.email,
+    //   to: email,
+    //   subject: "Your New Password",
+    //   text: `Your new password is: ${password}`,
+    // };
+
+    // // Send the email
+    // transporter.sendMail(mailOptions, (error, info) => {
+    //   if (error) {
+    //     console.error("Error sending email:", error);
+    //     res.status(500).json({
+    //       status: "error",
+    //       message: "Email could not be sent",
+    //       error: error.message,
+    //     });
+    //   } else {
+    //     console.log("Email sent:", info.response);
+    //     res.status(200).json({
+    //       status: "success",
+    //       message: "Staff created successfully",
+    //       data: staff,
+    //       generatedPassword: password,
+    //     });
+    //   }
+    // });
+  } 
+
 
 
 const createdepartment = async (req, res) => {
@@ -176,14 +190,23 @@ const deleteDepartment = async (req, res) => {
   });
 };
 
+
+
 const getAllStaff = async (req, res) => {
-  const allStaff = await staffSchema.find();
-  res.status(200).json({
-    message: "Got all staffs successfully",
-    data: allStaff,
-    status: "success",
-  });
+  try {
+    const allStaff = await staffSchema.find().populate("department");
+    res.status(200).json({
+      message: "Got all staffs successfully",
+      data: allStaff,
+      status: "success",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
+
+
 
 const getStaff = async (req, res) => {
   const staff = await staffSchema.findById(req.params.id);
@@ -505,6 +528,93 @@ const deleteAttendance = async (req, res) => {
   }
 };
 
+// leave.js
+
+const applyLeave =  async (req, res) => {
+  try {
+
+    const staffId = req.params.id; 
+    
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
+    const day = date.getDate().toString().padStart(2, '0');
+    
+    const formattedDate = `${year}-${month}-${day}`;
+
+   
+    const leaveRequest = new Leave({
+      fromDate: req.body.fromDate,
+      toDate: req.body.toDate,
+      reason: req.body.reason,
+      status: 'Pending', 
+      description: req.body.description,
+      applyOn: formattedDate,
+    });
+
+  
+    await leaveRequest.save();
+
+  
+    const staffMember = await staffSchema.findById(staffId);
+    staffMember.leaves.push(leaveRequest._id);
+    await staffMember.save();
+
+    res.json({ message: 'Leave request submitted successfully' ,staffMember});
+  } catch (error) {
+    res.status(500).json({ error: 'An error occurred' });
+  }
+}
+
+
+const getleaveRequest = async (req, res) => {
+  try {
+    const date = req.params.date
+   
+    if (date) {
+      leaveRequests = await Leave.find({ applyOn : date });
+     
+    }
+
+
+    if (!leaveRequests || leaveRequests.length === 0) {
+      return res.status(404).json({ error: 'No leave requests found for the specified date' });
+    }
+
+    res.status(200).json({data:leaveRequests});
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred' });
+  }
+}
+
+
+
+
+const approveleave =async (req, res) => {
+  try {
+    const leaveId = req.params.leaveId;
+    const status = req.body.status; // 'Approved' or 'Rejected'
+
+    // Find the leave request by ID and update its status
+    const leaveRequest = await Leave.findByIdAndUpdate(
+      leaveId,
+      { status },
+      { new: true }
+    );
+
+    if (!leaveRequest) {
+      return res.status(404).json({ error: 'Leave request not found' });
+    }
+
+    res.json({ message: 'Leave request updated successfully' ,leaveRequest});
+  } catch (error) {
+    res.status(500).json({ error: 'An error occurred' });
+  }
+}
+
+
+
 module.exports = {
   createstaff,
   registerCompany,
@@ -527,4 +637,8 @@ module.exports = {
   markattendance,
   updateAttendance,
   deleteAttendance,
+  applyLeave,
+  approveleave,
+  getleaveRequest,
+
 };
