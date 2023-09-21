@@ -9,16 +9,21 @@ const {
   getEmployeePerformances,
   getEmployeeAttendance,
   getEmployeeLeaves,
+  loginStaff,
+  getTaskById,
 } = require("../controller/staff");
 const tryCatch = require("../middleware/tryCatchp");
 
 const router = express.Router();
 
+
+router.post("/staff/login",tryCatch(loginStaff))
 router.post("/staff/createuser", tryCatch(createUser));
 router.get("/staff/users", tryCatch(getAllStaff));
 router.get("/staff/users/:id", tryCatch(getStaff));
 router.get("/staff/employee/:id", tryCatch(getEmployeeDetails)); 
-router.get("/staff/employee/tasks", getStaffsTasks);
+router.get("/staff/employee/tasks", tryCatch(getStaffsTasks));
+router.get('/employee/task/:staffId', tryCatch(getTaskById)); 
 router.get("/staff/employee/:id/tasks", tryCatch(getEmployeeTasks)); 
 router.get("/staff/employee/:id/performances", tryCatch(getEmployeePerformances)); 
 router.get("/staff/employee/:id/attendance", tryCatch(getEmployeeAttendance)); 

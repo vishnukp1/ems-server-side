@@ -5,7 +5,7 @@ const morgan = require("morgan")
 const multer = require("multer")
 const mongoose = require("mongoose")
 const companyRouter = require ("./src/routes/companyRoute")
-const adminRouter = require ("./src/routes/adminRoute")
+const adminRouter = require ("./src/routes/adminRoutes")
 const staffRouter = require ("./src/routes/staffRoute")
 app.use(express.json());
 app.use(cors());

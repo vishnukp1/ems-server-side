@@ -26,6 +26,8 @@ const {
     applyLeave,
     approveleave,
     getleaveRequest,
+    getAttendanceByDate,
+    getAttendance,
  
     
 } = require("../controller/company");
@@ -49,9 +51,11 @@ router.delete("/company/staff/:id",tryCatch(deleteStaff))
 router.post("/company/task/:id",tryCatch(addTask))
 router.delete('/:id/tasks/:taskId',tryCatch(deleteTask))
 router.put('/company/:id/task/:taskId',tryCatch(updateTask))
-router.get('/company/:staffId/task/:taskId', getTaskById); 
+router.get('/company/:staffId/task/:taskId', tryCatch(getTaskById)); 
 router.get("/company/alltasks",tryCatch(getAllTasks))
 router.post("/company/mark",tryCatch(markattendance))
+router.get("/company/attendance/:date",tryCatch(getAttendanceByDate))
+router.get("/company/attendance/",tryCatch(getAttendance))
 router.put('/updateAttendance/:staffId', tryCatch(updateAttendance));
 router.delete('/deleteAttendance/:staffId', tryCatch(deleteAttendance));
 router.post("/applyleave/:id",tryCatch(applyLeave))
