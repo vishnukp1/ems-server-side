@@ -223,18 +223,25 @@ const getStaff = async (req, res) => {
 
 const searchStaffByName = async (req, res) => {
   const { name } = req.query;
+  console.log(name);
   const search = await staffSchema.find({
     name: { $regex: new RegExp(name, "i") },
   });
+  console.log(search);
   res.json(search);
 };
 
 const searchDepartment = async (req, res) => {
   const { department } = req.query;
-  const search = await staffSchema.find({
-    department: { $regex: new RegExp(`^${department}$`, "i") },
-  });
-  res.json(search);
+  
+  const search = await staffSchema.find({department:department}).populate("department")
+
+
+ 
+res.status(200).json({
+  data:search,
+
+})
 };
 
 const updateStaff = async (req, res) => {
