@@ -121,20 +121,14 @@ console.log("dptobj",departmentObj);
 
 
 const getAllCompany = async (req, res) => {
-  try {
+ 
     const allCompany = await CompanySchema.find()
     res.status(200).json({
       message: "Got all Companys successfully",
       data: allCompany,
       status: "success",
     });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal server error" });
   }
-};
-
-
 
 const getCompany = async (req, res) => {
   const Company = await CompanySchema.findById(req.params.id);

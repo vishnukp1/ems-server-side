@@ -18,7 +18,7 @@ router.get("/admin/company", tryCatch(getAllCompany));
 router.get("/admin/company/:id", tryCatch(getCompany));
 router.put("/admin/company/:id", tryCatch(updateCompany));
 router.delete("/admin/company/:id", tryCatch(deleteCompany));
-router.get("/admin/searchdepartment",tryCatch(searchCompanyByName))
+router.get("/admin/searchcompany",tryCatch(searchCompanyByName))
 
 
 module.exports = router;

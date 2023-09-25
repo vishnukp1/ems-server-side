@@ -10,13 +10,13 @@ const StaffSchema = new mongoose.Schema({
          required:false, 
          
      },
-     companyId:
-     [
+     company:
+    
       {
         ref: "company",
         type: mongoose.Schema.Types.ObjectId,
       },
-    ],
+  
     email:{
          type:String,
          required:false

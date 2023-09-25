@@ -6,7 +6,13 @@ const DepartmentSchema = new mongoose.Schema({
         require:false
        },
 
-
+       company:
+       
+        {
+          ref: "company",
+          type: mongoose.Schema.Types.ObjectId,
+        },
+      
 })
 
 const Department = mongoose.model("department",DepartmentSchema)

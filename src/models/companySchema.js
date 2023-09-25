@@ -21,6 +21,7 @@ const CompanySchema = new mongoose.Schema({
          type:Number,
          required:false
      },
+     admin: { type: mongoose.Schema.Types.ObjectId, ref: 'admin' },
      
 
 })

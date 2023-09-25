@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const staffSchema = require("../models/staffSchema");
 const validate = require("../validation/schemaValidation");
 const Department = require("../models/dpartmentSchema");
+const Leave = require("../models/leaveSchema")
 
   const createUser = async (req, res) => {
 
@@ -43,7 +44,7 @@ const loginStaff = async (req, res) => {
 
 
 const getAllStaff = async (req,res) =>{
-  const allStaff = await staffSchema.find()
+  const allStaff = await staffSchema.find({company:req.company._id})
   res.json(allStaff)
 }
 
@@ -97,7 +98,7 @@ const getEmployeeTasks = async (req, res) => {
 
 const getStaffsTasks = async (req, res) => {
  
-    const allStaffs = await Staff.find();
+    const allStaffs = await staffSchema.find();
      res.json({allStaffs})
     const allTasks = allStaffs.map(staff => staff.tasks);
 
@@ -108,17 +109,41 @@ const getStaffsTasks = async (req, res) => {
  
 };
 
-const getEmployeePerformances = async (req, res) => {
+const applyLeave =  async (req, res) => {
+ 
+
+  const staffId = req.params.id; 
   
-    const staff = await staffSchema.findById(req.params.id);
-    if (!staff) {
-      return res.status(404).json({ error: "Staff not found" });
-    }
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
+  const day = date.getDate().toString().padStart(2, '0');
+  
+  const formattedDate = `${year}-${month}-${day}`;
 
-    const performances = staff.performances;
-    res.json({ performances });
 
-};
+  const leaveRequest = new Leave({
+    fromDate: req.body.fromDate,
+    toDate: req.body.toDate,
+    reason: req.body.reason,
+    status: 'Pending', 
+    description: req.body.description,
+    applyOn: formattedDate,
+    company:req.company._id,
+    full: true,
+   
+  });
+
+  console.log("ever okk");
+  await leaveRequest.save();
+
+
+  const staffMember = await staffSchema.findById(staffId);
+  staffMember.leaves.push(leaveRequest._id);
+  await staffMember.save();
+
+  res.json({ message: 'Leave request submitted successfully' ,staffMember});
+} 
 
 const getEmployeeAttendance = async (req, res) => {
   
@@ -147,21 +172,33 @@ const getEmployeeLeaves = async (req, res) => {
 const getTaskById = async (req, res) => {
   const { staffId } = req.params;
 
-  try {
+
     const staff = await staffSchema.findById(staffId);
     
     if (!staff) {
       return res.status(404).json({ error: "Staff not found" });
     }
 
-    const tasks = staff.tasks; // Assuming "tasks" is the array containing tasks for a staff member
+    const tasks = staff.tasks; 
 
     res.json({ tasks });
-  } catch (error) {
-    console.error("Error fetching tasks:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
+  } 
+
+  const getApprovedleave = async (req, res) => {
+    
+      const { id } = req.params;
+  
+      const staff = await staffSchema.findById(id).populate("leaves");
+  
+      if (!staff) {
+        return res.status(404).json({ message: "Staff not found" });
+      }
+  
+      const approvedLeaves = staff.leaves.filter(leave => leave.status === "approved");
+
+      res.status(200).json({message:"got approved leave successfully",data:approvedLeaves});
+    } 
+   
 
 module.exports = {
     createUser,
@@ -169,10 +206,13 @@ module.exports = {
     getAllStaff,
     getEmployeeDetails,
     getEmployeeTasks,
-    getEmployeePerformances,
+ 
     getEmployeeAttendance,
     getEmployeeLeaves,
     getStaffsTasks,
     loginStaff,
-    getTaskById
+    getTaskById,
+    applyLeave,
+ getApprovedleave
+
 }

@@ -9,7 +9,8 @@ const DepartmentSchema = require("../models/dpartmentSchema");
 const nodemailer = require("nodemailer"); // Import the nodemailer library
 const randomstring = require("randomstring");
 const validate = require("../validation/schemaValidation");
-const Leave = require("../models/leaveSchema")
+const Leave = require("../models/leaveSchema");
+const { log } = require("console");
 
 const registerCompany = async (req, res) => {
   const { error, value } = validate.companyValidate.validate(req.body);
@@ -49,7 +50,7 @@ const loginUser = async (req, res) => {
 
   const { email, password } = value;
 
-  const user = await companySchema.findOne({ email });
+  const user = await companySchema.findOne({ email:email });
   if (!user) {
     return res.status(401).json({ error: "Invalid username" });
   }
@@ -63,17 +64,14 @@ const loginUser = async (req, res) => {
 
 const createstaff = async (req, res) => {
 
-    const { name, email, phone, address, salary, gender, department,companyId } = req.body;
+    const { name, email, phone, address, salary, gender, department} = req.body;
 
-
-
- 
     const password = randomstring.generate(8);
 
    
     const hashedPassword = await bcrypt.hash(password, 10);
 
-
+  
     const result = await cloudinary.uploader.upload(req.file.path, {
      
         public_id: `${name.replace(/\s+/g, "_").toLowerCase()}_profile`, 
@@ -81,7 +79,6 @@ const createstaff = async (req, res) => {
       
     });
 
-    
     fs.unlinkSync(req.file.path);
 
      let departmentObj = null;
@@ -93,6 +90,7 @@ const createstaff = async (req, res) => {
       }
     }
 
+    
    
  
 console.log("dptobj",departmentObj);
@@ -103,11 +101,12 @@ console.log("dptobj",departmentObj);
       phone: phone,
       email: email,
       address: address,
-      companyId:companyId,
+      company:req.company._id,
       imagepath: result.secure_url,
       salary: salary,
       gender: gender,
       department: departmentObj ? departmentObj._id : null,
+      
     });
 
     
@@ -162,8 +161,11 @@ const createdepartment = async (req, res) => {
     return res.status(400).json({ error: "title is not added" });
   }
 
+  
+
   const department = new DepartmentSchema({
     title: title,
+    company:req.company._id,
     full: true,
   });
 
@@ -177,7 +179,8 @@ const createdepartment = async (req, res) => {
 };
 
 const getDepartment = async (req, res) => {
-  const department = await DepartmentSchema.find();
+  const department = await DepartmentSchema.find({company:req.company._id});
+  
   res.status(200).json({
     message: "Department got successfully",
     data: department,
@@ -198,7 +201,7 @@ const deleteDepartment = async (req, res) => {
 
 const getAllStaff = async (req, res) => {
   try {
-    const allStaff = await staffSchema.find().populate("department");
+    const allStaff = await staffSchema.find({company:req.company._id}).populate("department");
     res.status(200).json({
       message: "Got all staffs successfully",
       data: allStaff,
@@ -225,22 +228,25 @@ const searchStaffByName = async (req, res) => {
   const { name } = req.query;
   console.log(name);
   const search = await staffSchema.find({
-    name: { $regex: new RegExp(name, "i") },
-  });
+    $and: [
+      { company: req.company._id }, 
+      { name: { $regex: new RegExp(name, "i") } }
+    ]
+  }).populate("department")
   console.log(search);
   res.json(search);
 };
+
 
 const searchDepartment = async (req, res) => {
   const { department } = req.query;
   
   const search = await staffSchema.find({department:department}).populate("department")
 
-
- 
+  console.log(search.department);
 res.status(200).json({
   data:search,
-
+status:"success"
 })
 };
 
@@ -312,6 +318,11 @@ const getTaskById = async (req, res) => {
 const getAllTasks = async (req, res) => {
   const allStaffsTasks = await staffSchema.aggregate([
     {
+      $match: {
+        company: req.company._id, 
+      },
+    },
+    {
       $unwind: "$tasks",
     },
     {
@@ -327,6 +338,8 @@ const getAllTasks = async (req, res) => {
       },
     },
   ]);
+
+
 
   if (allStaffsTasks.length > 0) {
     res.status(200).json({
@@ -396,7 +409,7 @@ const updateTask = async (req, res) => {
   const { taskId } = req.params;
   const { title, startTime, endTime, status } = req.body;
 
-  try {
+ 
     const updatedTask = await staffSchema.findOneAndUpdate(
       {
         _id: id,
@@ -419,14 +432,10 @@ const updateTask = async (req, res) => {
     } else {
       res.status(404).json({ error: "Task or Staff not found" });
     }
-  } catch (error) {
-    console.error("Error updating task:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
+  } 
 
 const markattendance = async (req, res) => {
-  try {
+
     const selectedStaffIds = req.body.selectedStaff;
     const attendanceStatus = req.body.status;
     const attendanceDate = new Date();
@@ -473,19 +482,19 @@ const markattendance = async (req, res) => {
     for (const staffId of unmatchedStaff) {
       const notMatchedStaff = await staffSchema.findById(staffId);
 
-      const newtAttendanceRecord = notMatchedStaff.attendance.find(
+      const NonAttendanceRecord = notMatchedStaff.attendance.find(
         (record) => record.date.toDateString() === attendanceDate.toDateString()
       );
 
-      if (newtAttendanceRecord) {
-        newtAttendanceRecord.status = "Leave";
+      if (NonAttendanceRecord) {
+        NonAttendanceRecord.status = "Leave";
       } else {
-        const newtAttendanceRecord = {
+        const NonAttendanceRecord = {
           date: attendanceDate,
           status: "Leave",
         };
 
-        notMatchedStaff.attendance.push(newtAttendanceRecord);
+        notMatchedStaff.attendance.push(NonAttendanceRecord);
       }
 
       await notMatchedStaff.save();
@@ -497,16 +506,11 @@ const markattendance = async (req, res) => {
       markedStaff,
       unmatchedStaff,
     });
-  } catch (error) {
-    console.error("Error marking attendance:", error);
-    res.status(500).json({ message: "Error marking attendance" });
-  }
-};
-
+  } 
 
 
 const updateAttendance = async (req, res) => {
-  try {
+
     const staffId = req.params.staffId;
     const attendanceDate = new Date(req.body.date);
     const attendanceStatus = req.body.status;
@@ -537,14 +541,10 @@ const updateAttendance = async (req, res) => {
         message: `No attendance record found for date: ${attendanceDate}`,
       });
     }
-  } catch (error) {
-    console.error("Error updating attendance:", error);
-    res.status(500).json({ message: "Error updating attendance" });
-  }
-};
+  } 
 
 const deleteAttendance = async (req, res) => {
-  try {
+
     const staffId = req.params.staffId;
     const attendanceDate = new Date(req.body.date);
 
@@ -574,57 +574,26 @@ const deleteAttendance = async (req, res) => {
         message: `No attendance record found for date: ${attendanceDate}`,
       });
     }
-  } catch (error) {
-    console.error("Error deleting attendance:", error);
-    res.status(500).json({ message: "Error deleting attendance" });
-  }
-};
+  } 
 
 // leave.js
 
-const applyLeave =  async (req, res) => {
-  try {
-
-    const staffId = req.params.id; 
-    
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
-    const day = date.getDate().toString().padStart(2, '0');
-    
-    const formattedDate = `${year}-${month}-${day}`;
-
-   
-    const leaveRequest = new Leave({
-      fromDate: req.body.fromDate,
-      toDate: req.body.toDate,
-      reason: req.body.reason,
-      status: 'Pending', 
-      description: req.body.description,
-      applyOn: formattedDate,
-    });
-
-  
-    await leaveRequest.save();
-
-  
-    const staffMember = await staffSchema.findById(staffId);
-    staffMember.leaves.push(leaveRequest._id);
-    await staffMember.save();
-
-    res.json({ message: 'Leave request submitted successfully' ,staffMember});
-  } catch (error) {
-    res.status(500).json({ error: 'An error occurred' });
-  }
-}
 
 
 const getleaveRequest = async (req, res) => {
-  try {
+ 
     const date = req.params.date
    
     if (date) {
-      leaveRequests = await Leave.find({ applyOn : date });
+      leaveRequests = await Leave.find({
+       
+          $and: [
+            { company: req.company._id }, 
+            { applyOn : date }
+          
+          ]
+        })
+     
      
     }
 
@@ -633,18 +602,13 @@ const getleaveRequest = async (req, res) => {
       return res.status(404).json({ error: 'No leave requests found for the specified date' });
     }
 
-    res.status(200).json({data:leaveRequests});
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'An error occurred' });
-  }
-}
-
+    res.status(200).json({message:"Successfully leave Got",data:leaveRequests});
+  } 
 
 
 
 const approveleave =async (req, res) => {
-  try {
+ 
     const leaveId = req.params.leaveId;
     const status = req.body.status; 
 
@@ -658,24 +622,25 @@ const approveleave =async (req, res) => {
       return res.status(404).json({ error: 'Leave request not found' });
     }
 
-    res.json({ message: 'Leave request updated successfully' ,leaveRequest});
-  } catch (error) {
-    res.status(500).json({ error: 'An error occurred' });
-  }
-}
+    res.status(200).json({ message: 'Leave request updated successfully' ,data:leaveRequest});
+  } 
 
 
 const getAttendanceByDate = async (req, res) => {
-  try {
-    // Get the current date without the time component (set to midnight)
+ 
+  
     const currentDate = new Date(req.params.date);
-    const currentHour = currentDate.setHours(0, 0, 0, 0);
+    currentDate.setHours(0, 0, 0, 0);
 
-    console.log(currentHour);
 
     
 
     const attendanceRecords = await staffSchema.aggregate([
+      {
+        $match: {
+          company: req.company._id, 
+        },
+      },
       {
         $unwind: "$attendance",
       },
@@ -685,7 +650,7 @@ const getAttendanceByDate = async (req, res) => {
         
               "attendance.date": {
                 $gte: currentDate,
-                $lt: new Date(currentDate.getTime() + 24 * 60 * 60 * 1000),
+                $lt: new Date(currentDate.getTime() + 24 * 60 * 60 * 1000 ),
             
             },
            
@@ -711,36 +676,34 @@ const getAttendanceByDate = async (req, res) => {
       },
     ]);
     
-
-    // const allStaff = await attendanceRecords.find().populate("department");
-
-    // console.log(allStaff);
+    
 
     res.status(200).json({
       message: "Attendance retrieved successfully",
       status: "success",
       data:attendanceRecords,
     });
-  } catch (error) {
-    console.error("Error retrieving attendance:", error);
-    res.status(500).json({ message: "Error retrieving attendance" });
-  }
-}
+  } 
+
 
 const getAttendance = async (req, res) => {
-  try {
-    // Get the current date without the time component (set to midnight)
-   
-    const currentHour = currentDate.setHours(0, 0, 0, 0);
 
-    console.log(currentHour);
+const today = new Date();
+today.setHours(0, 0, 0, 0); // Set the time portion to midnight
+
 
     
 
     const attendanceRecords = await staffSchema.aggregate([
       {
+        $match: {
+          company: req.company._id, 
+        },
+      },
+      {
         $unwind: "$attendance",
       },
+   
       
       {
         $lookup: {
@@ -761,22 +724,62 @@ const getAttendance = async (req, res) => {
       },
     ]);
     
-
-    // const allStaff = await attendanceRecords.find().populate("department");
-
-    // console.log(allStaff);
+    
 
     res.status(200).json({
       message: "Attendance retrieved successfully",
       status: "success",
       data:attendanceRecords,
     });
-  } catch (error) {
-    console.error("Error retrieving attendance:", error);
-    res.status(500).json({ message: "Error retrieving attendance" });
-  }
-}
+  } 
 
+
+const getAttendancebyDepartment = async (req, res) => {
+  const today = new Date();
+  const currentDate = new Date().setHours(0, 0, 0, 0);
+
+  const departmentName = req.query.department;
+
+  const department = await DepartmentSchema.findOne({ title: departmentName });
+
+  if (!department) {
+    return res.status(404).json({
+      message: "Department not found",
+      status: "error",
+    });
+  }
+
+  const attendanceRecords = await staffSchema.aggregate([
+    {
+      $match: {
+        company: req.company._id,
+        department: { $elemMatch: { $eq: department._id } }, // Match the department within the array
+      },
+    },
+    {
+      $unwind: "$attendance",
+    },
+    {
+      $project: {
+        _id: 0,
+        staffId: "$_id",
+        staffName: "$name",
+        department: department.title,
+        attendance: "$attendance",
+      },
+    },
+  ]);
+
+  console.log(attendanceRecords);
+
+  res.status(200).json({
+    message: "Attendance retrieved successfully",
+    status: "success",
+    data: attendanceRecords,
+  });
+};
+
+  
 
 module.exports = {
   createstaff,
@@ -800,10 +803,11 @@ module.exports = {
   markattendance,
   updateAttendance,
   deleteAttendance,
-  applyLeave,
+
   approveleave,
   getleaveRequest,
   getAttendanceByDate,
-  getAttendance
+  getAttendance,
+  getAttendancebyDepartment
 
 };

@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 
 const LeaveSchema = new mongoose.Schema({
@@ -7,7 +6,11 @@ const LeaveSchema = new mongoose.Schema({
   reason: String,
   status: String,
   description: String,
-  applyOn: Date
+  applyOn: Date,
+  company: {
+    ref: "Company", 
+    type: mongoose.Schema.Types.ObjectId,
+  },
 });
 
 const Leave = mongoose.model("Leave", LeaveSchema);
