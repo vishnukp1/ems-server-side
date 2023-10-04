@@ -23,12 +23,15 @@ const {
   updateAttendance,
   deleteAttendance,
 
-  applyLeave,
+  getAttendancebyName ,
   approveleave,
   getleaveRequest,
   getAttendanceByDate,
   getAttendance,
   getAttendancebyDepartment,
+  updateDepartment,
+  getDepartmentById,
+  deleteLeave,
 } = require("../controller/company");
 const tryCatch = require("../middleware/tryCatchp");
 const upload = require("../middleware/multer.js");
@@ -64,6 +67,8 @@ router.delete("/:id/tasks/:taskId", tryCatch(deleteTask));
 router.put("/company/:id/task/:taskId", tryCatch(updateTask));
 router.get("/company/:staffId/task/:taskId", tryCatch(getTaskById));
 router.get("/company/alltasks", tryCatch(getAllTasks));
+router.get("/company/department/:id", verifyCompany,tryCatch(getDepartmentById));
+router.put("/company/department/:id", tryCatch(updateDepartment));
 router.post("/company/mark", tryCatch(markattendance));
 router.get(
   "/company/attendance/:date",
@@ -73,12 +78,18 @@ router.get(
 router.get("/company/attendance", verifyCompany, tryCatch(getAttendance));
 router.put("/updateAttendance/:staffId", tryCatch(updateAttendance));
 router.delete("/deleteAttendance/:staffId", tryCatch(deleteAttendance));
+router.delete("/deleteleave/:leaveId", tryCatch(deleteLeave));
 router.put("/leave/approve/:leaveId", tryCatch(approveleave));
 router.get("/leaves/:date",verifyCompany, tryCatch(getleaveRequest));
 router.get(
   "/company/searchdepartments",
   verifyCompany,
   tryCatch(getAttendancebyDepartment)
+);
+router.get(
+  "/attendance/name",
+  verifyCompany,
+  tryCatch(getAttendancebyName)
 );
 
 module.exports = router;

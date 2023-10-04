@@ -11,6 +11,10 @@ const LeaveSchema = new mongoose.Schema({
     ref: "Company", 
     type: mongoose.Schema.Types.ObjectId,
   },
+  staff: {
+    ref: "Staff",
+    type: mongoose.Schema.Types.ObjectId,
+  },
 });
 
 const Leave = mongoose.model("Leave", LeaveSchema);

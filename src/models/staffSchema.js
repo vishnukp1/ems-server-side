@@ -25,12 +25,12 @@ const StaffSchema = new mongoose.Schema({
          type:String,
          required:false
      },
-     department:[
+     department:
       {
         ref: "department",
         type: mongoose.Schema.Types.ObjectId,
       },
-    ],
+    
      imagepath:{
         type:Array,
         default: "Default Name",
@@ -53,12 +53,15 @@ const StaffSchema = new mongoose.Schema({
      performances: [
         {
           date: Date,
+        
           rating: Number,
         }
       ],
       attendance: [
         {
           date: Date,
+          TimeIn:Date,
+          TimeOut:Date,
           status: String ,
     
         }
@@ -69,7 +72,8 @@ const StaffSchema = new mongoose.Schema({
           type: mongoose.Schema.Types.ObjectId,
           ref: "Leave",
         }
-      ],
+      ]
+      ,
     
       tasks: [
         {

@@ -1,11 +1,11 @@
-const fs = require("fs")
+const fs = require("fs");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const staffSchema = require("../models/staffSchema");
 const cloudinary = require("../uploadImg");
 require("dotenv").config();
 const companySchema = require("../models/companySchema");
-const DepartmentSchema = require("../models/dpartmentSchema"); 
+const DepartmentSchema = require("../models/dpartmentSchema");
 const nodemailer = require("nodemailer"); // Import the nodemailer library
 const randomstring = require("randomstring");
 const validate = require("../validation/schemaValidation");
@@ -38,7 +38,7 @@ const registerCompany = async (req, res) => {
     message: "company created succesfully",
     data: user,
     token: token,
-    companyId:user._id
+    companyId: user._id,
   });
 };
 
@@ -50,7 +50,7 @@ const loginUser = async (req, res) => {
 
   const { email, password } = value;
 
-  const user = await companySchema.findOne({ email:email });
+  const user = await companySchema.findOne({ email});
   if (!user) {
     return res.status(401).json({ error: "Invalid username" });
   }
@@ -63,96 +63,85 @@ const loginUser = async (req, res) => {
 };
 
 const createstaff = async (req, res) => {
+  const { name, email, phone, address, salary, gender, department } = req.body;
 
-    const { name, email, phone, address, salary, gender, department} = req.body;
+  const password = randomstring.generate(8);
 
-    const password = randomstring.generate(8);
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-   
-    const hashedPassword = await bcrypt.hash(password, 10);
+  const result = await cloudinary.uploader.upload(req.file.path, {
+    public_id: `${name.replace(/\s+/g, "_").toLowerCase()}_profile`,
+  });
 
-  
-    const result = await cloudinary.uploader.upload(req.file.path, {
-     
-        public_id: `${name.replace(/\s+/g, "_").toLowerCase()}_profile`, 
-    
-      
-    });
+  fs.unlinkSync(req.file.path);
 
-    fs.unlinkSync(req.file.path);
-
-     let departmentObj = null;
-    if (department) {
-      departmentObj = await DepartmentSchema.findOne({ title: department });
-      if (!departmentObj) {
-        departmentObj = new DepartmentSchema({ title: department });
-        await departmentObj.save();
-      }
+  let departmentObj = null;
+  if (department) {
+    departmentObj = await DepartmentSchema.findOne({ title: department });
+    if (!departmentObj) {
+      departmentObj = new DepartmentSchema({ title: department });
+      await departmentObj.save();
     }
+  }
 
-    
-   
- 
-console.log("dptobj",departmentObj);
+  console.log("dptobj", departmentObj);
 
-    const staff = new staffSchema({
-      name: name,
-      password: hashedPassword,
-      phone: phone,
-      email: email,
-      address: address,
-      company:req.company._id,
-      imagepath: result.secure_url,
-      salary: salary,
-      gender: gender,
-      department: departmentObj ? departmentObj._id : null,
-      
-    });
+  const staff = new staffSchema({
+    name: name,
+    password: hashedPassword,
+    phone: phone,
+    email: email,
+    address: address,
+    company: req.company._id,
+    imagepath: result.secure_url,
+    salary: salary,
+    gender: gender,
+    department: departmentObj ? departmentObj._id : null,
+  });
 
-    
-    await staff.save();
+  await staff.save();
 
-   res.json({staff})
+  res.json({ staff });
 
-    // Create a transporter for sending emails
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.email,
-        pass: process.env.password,
-      },
-    });
 
-    // Define email content
-    const mailOptions = {
-      from: process.env.email,
-      to: email,
-      subject: "Your New Password",
-      text: `Your new password is: ${password}`,
-    };
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.email,
+      pass: process.env.password,
+    },
+  });
 
-    // Send the email
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error("Error sending email:", error);
-        res.status(500).json({
-          status: "error",
-          message: "Email could not be sent",
-          error: error.message,
-        });
-      } else {
-        console.log("Email sent:", info.response);
-        res.status(200).json({
-          status: "success",
-          message: "Staff created successfully",
-          data: staff,
-          generatedPassword: password,
-        });
-      }
-    });
-  } 
 
-//Single Database, Document-Based:
+  const mailOptions = {
+    from: process.env.email,
+    to: email,
+    subject: "Your New Password",
+    text: `Your new password is: ${password}`,
+  };
+
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error("Error sending email:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Email could not be sent",
+        error: error.message,
+      });
+    } else {
+      console.log("Email sent:", info.response);
+      res.status(200).json({
+        status: "success",
+        message: "Staff created successfully",
+        data: staff,
+        generatedPassword: password,
+      });
+    }
+  });
+};
+
+
 
 const createdepartment = async (req, res) => {
   const { title } = req.body;
@@ -161,11 +150,9 @@ const createdepartment = async (req, res) => {
     return res.status(400).json({ error: "title is not added" });
   }
 
-  
-
   const department = new DepartmentSchema({
     title: title,
-    company:req.company._id,
+    company: req.company._id,
     full: true,
   });
 
@@ -178,15 +165,58 @@ const createdepartment = async (req, res) => {
   });
 };
 
+const updateDepartment = async (req, res) => {
+  console.log(req.body);
+  const updatedDepartment = await DepartmentSchema.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true }
+  );
+  if (updatedDepartment) {
+    console.log("supdatedstaff updated:", updatedDepartment);
+    res.json(updatedDepartment);
+  } else {
+    res.status(404).json({ error: "Staff not found" });
+  }
+};
+
+
 const getDepartment = async (req, res) => {
-  const department = await DepartmentSchema.find({company:req.company._id});
-  
+  const department = await DepartmentSchema.find({ company: req.company._id });
+
   res.status(200).json({
     message: "Department got successfully",
     data: department,
     status: "success",
   });
 };
+
+const getDepartmentById = async (req, res) => {
+  try {
+    const department = await DepartmentSchema.findOne({
+      company: req.company._id,
+      _id: req.params.id
+    });
+    
+    if (!department) {
+      return res.status(404).json({ error: "Department not found" });
+    }
+
+    console.log(department);
+
+    res.status(200).json({
+   
+     department
+     
+    });
+  } catch (error) {
+    console.error("Error fetching department:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+
 
 const deleteDepartment = async (req, res) => {
   const department = await DepartmentSchema.findByIdAndDelete(req.params.id);
@@ -197,11 +227,11 @@ const deleteDepartment = async (req, res) => {
   });
 };
 
-
-
 const getAllStaff = async (req, res) => {
   try {
-    const allStaff = await staffSchema.find({company:req.company._id}).populate("department");
+    const allStaff = await staffSchema
+      .find({ company: req.company._id })
+      .populate("department");
     res.status(200).json({
       message: "Got all staffs successfully",
       data: allStaff,
@@ -212,8 +242,6 @@ const getAllStaff = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
 
 const getStaff = async (req, res) => {
   const staff = await staffSchema.findById(req.params.id);
@@ -227,27 +255,30 @@ const getStaff = async (req, res) => {
 const searchStaffByName = async (req, res) => {
   const { name } = req.query;
   console.log(name);
-  const search = await staffSchema.find({
-    $and: [
-      { company: req.company._id }, 
-      { name: { $regex: new RegExp(name, "i") } }
-    ]
-  }).populate("department")
+  const search = await staffSchema
+    .find({
+      $and: [
+        { company: req.company._id },
+        { name: { $regex: new RegExp(name, "i") } },
+      ],
+    })
+    .populate("department");
   console.log(search);
   res.json(search);
 };
 
-
 const searchDepartment = async (req, res) => {
   const { department } = req.query;
-  
-  const search = await staffSchema.find({department:department}).populate("department")
+
+  const search = await staffSchema
+    .find({ department: department })
+    .populate("department");
 
   console.log(search.department);
-res.status(200).json({
-  data:search,
-status:"success"
-})
+  res.status(200).json({
+    data: search,
+    status: "success",
+  });
 };
 
 const updateStaff = async (req, res) => {
@@ -296,20 +327,24 @@ const addTask = async (req, res) => {
 };
 
 const getTaskById = async (req, res) => {
-  const { staffId } = req.params;
+  const { staffId, taskId } = req.params;
 
   try {
     const staff = await staffSchema.findById(staffId);
-    
+
     if (!staff) {
       return res.status(404).json({ error: "Staff not found" });
     }
 
-    const tasks = staff.tasks; // Assuming "tasks" is the array containing tasks for a staff member
+    const task = staff.tasks.find((task) => task._id.toString() === taskId);
 
-    res.json({ tasks });
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    res.json({ task });
   } catch (error) {
-    console.error("Error fetching tasks:", error);
+    console.error("Error fetching task:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -319,7 +354,7 @@ const getAllTasks = async (req, res) => {
   const allStaffsTasks = await staffSchema.aggregate([
     {
       $match: {
-        company: req.company._id, 
+        company: req.company._id,
       },
     },
     {
@@ -339,8 +374,6 @@ const getAllTasks = async (req, res) => {
     },
   ]);
 
-
-
   if (allStaffsTasks.length > 0) {
     res.status(200).json({
       massage: "Got all tasks",
@@ -352,7 +385,7 @@ const getAllTasks = async (req, res) => {
   }
 };
 
-//  TODO: Implement joi validation to all POST,PUT,,PATCH routes
+
 
 const searchTaskByName = async (req, res) => {
   const { name } = req.query;
@@ -409,257 +442,273 @@ const updateTask = async (req, res) => {
   const { taskId } = req.params;
   const { title, startTime, endTime, status } = req.body;
 
- 
-    const updatedTask = await staffSchema.findOneAndUpdate(
-      {
-        _id: id,
-        "tasks._id": taskId,
+  const updatedTask = await staffSchema.findOneAndUpdate(
+    {
+      _id: id,
+      "tasks._id": taskId,
+    },
+    {
+      $set: {
+        "tasks.$.title": title,
+        "tasks.$.startTime": startTime,
+        "tasks.$.endTime": endTime,
+        "tasks.$.status": status,
       },
-      {
-        $set: {
-          "tasks.$.title": title,
-          "tasks.$.startTime": startTime,
-          "tasks.$.endTime": endTime,
-          "tasks.$.status": status,
-        },
-      },
-      { new: true }
-    );
+    },
+    { new: true }
+  );
 
-    if (updatedTask) {
-      console.log("Updated Task:", updatedTask);
-      res.json(updatedTask);
-    } else {
-      res.status(404).json({ error: "Task or Staff not found" });
-    }
-  } 
+  if (updatedTask) {
+    console.log("Updated Task:", updatedTask);
+    res.json(updatedTask);
+  } else {
+    res.status(404).json({ error: "Task or Staff not found" });
+  }
+};
+
+
+
 
 const markattendance = async (req, res) => {
-
-    const selectedStaffIds = req.body.selectedStaff;
-    const attendanceStatus = req.body.status;
-    const attendanceDate = new Date();
-
-    const markedStaff = [];
-    const unmatchedStaff = [];
-
-    const allStaff = await staffSchema.find({}, '_id');
+  const attendanceData = req.body; 
 
 
-    const allStaffIds = allStaff.map(staff => staff._id.toString());
+  if (!Array.isArray(attendanceData)) {
+    return res.status(400).json({ error: "Invalid attendance data format" });
+  }
 
- 
-    for (const staffId of allStaffIds) {
-      if (!selectedStaffIds.includes(staffId)) {
-        unmatchedStaff.push(staffId);
-      }
+  const insertedAttendanceRecords = [];
+
+
+  for (const record of attendanceData) {
+    const { staffId, TimeIn, TimeOut, status, date } = record;
+    const attendanceDate = new Date(date);
+
+
+    const staff = await staffSchema.findById(staffId).populate("department");
+
+   
+
+    if (!staff) {
+      return res.status(404).json({ error: `Staff member with ID ${staffId} not found` });
     }
 
- 
-    for (const staffId of selectedStaffIds) {
-      const staff = await staffSchema.findById(staffId);
-
-      const existingAttendanceRecord = staff.attendance.find(
-        (record) => record.date.toDateString() === attendanceDate.toDateString()
-      );
-
-      if (existingAttendanceRecord) {
-        existingAttendanceRecord.status = attendanceStatus;
-      } else {
-        const newAttendanceRecord = {
-          date: attendanceDate,
-          status: attendanceStatus,
-        };
-
-        staff.attendance.push(newAttendanceRecord);
-      }
-
-      await staff.save();
-      markedStaff.push(staff);
-    }
-
-    
-    for (const staffId of unmatchedStaff) {
-      const notMatchedStaff = await staffSchema.findById(staffId);
-
-      const NonAttendanceRecord = notMatchedStaff.attendance.find(
-        (record) => record.date.toDateString() === attendanceDate.toDateString()
-      );
-
-      if (NonAttendanceRecord) {
-        NonAttendanceRecord.status = "Leave";
-      } else {
-        const NonAttendanceRecord = {
-          date: attendanceDate,
-          status: "Leave",
-        };
-
-        notMatchedStaff.attendance.push(NonAttendanceRecord);
-      }
-
-      await notMatchedStaff.save();
-    }
-
-    res.status(200).json({
-      message: "Attendance marked successfully",
-      status: "success",
-      markedStaff,
-      unmatchedStaff,
+  
+    const existingAttendanceRecord = staff.attendance.find((record) => {
+      return record.date.toDateString() === attendanceDate.toDateString();
     });
-  } 
+
+    console.log(existingAttendanceRecord);
+    if (existingAttendanceRecord) {
+   
+      existingAttendanceRecord.status = status;
+      existingAttendanceRecord.TimeIn = new Date(TimeIn);
+      existingAttendanceRecord.TimeOut = new Date(TimeOut);
+    } else {
+     
+      const newAttendanceRecord = {
+        date: attendanceDate,
+        TimeIn: new Date(TimeIn),
+        TimeOut: new Date(TimeOut),
+        status: status,
+      };
+
+      staff.attendance.push(newAttendanceRecord);
+    }
+
+
+    await staff.save();
+
+    console.log(staffId);
+
+    insertedAttendanceRecords.push({
+      staffId: staff._id,
+      date: attendanceDate,
+      status: status,
+    });
+  }
+
+  res.status(201).json({ message: "Attendance registered successfully", data: insertedAttendanceRecords });
+}
+
 
 
 const updateAttendance = async (req, res) => {
+  const staffId = req.params.staffId;
+  const attendanceDate = new Date(req.body.date);
+  const attendanceStatus = req.body.status;
 
-    const staffId = req.params.staffId;
-    const attendanceDate = new Date(req.body.date);
-    const attendanceStatus = req.body.status;
+  const staff = await staffSchema.findById(staffId);
 
-    const staff = await staffSchema.findById(staffId);
+  if (!staff) {
+    return res
+      .status(404)
+      .json({ message: `Staff with ID ${staffId} not found` });
+  }
 
-    if (!staff) {
-      return res
-        .status(404)
-        .json({ message: `Staff with ID ${staffId} not found` });
-    }
+  const attendanceRecord = staff.attendance.find(
+    (record) => record.date.toDateString() === attendanceDate.toDateString()
+  );
 
-    const attendanceRecord = staff.attendance.find(
-      (record) => record.date.toDateString() === attendanceDate.toDateString()
-    );
+  if (attendanceRecord) {
+    attendanceRecord.status = attendanceStatus;
+    await staff.save();
 
-    if (attendanceRecord) {
-      attendanceRecord.status = attendanceStatus;
-      await staff.save();
-
-      return res.status(200).json({
-        message: "Attendance updated successfully",
-        status: "success",
-        data: staff,
-      });
-    } else {
-      return res.status(404).json({
-        message: `No attendance record found for date: ${attendanceDate}`,
-      });
-    }
-  } 
+    return res.status(200).json({
+      message: "Attendance updated successfully",
+      status: "success",
+      data: staff,
+    });
+  } else {
+    return res.status(404).json({
+      message: `No attendance record found for date: ${attendanceDate}`,
+    });
+  }
+};
 
 const deleteAttendance = async (req, res) => {
+  const staffId = req.params.staffId;
+  const attendanceDate = new Date(req.body.date);
 
-    const staffId = req.params.staffId;
-    const attendanceDate = new Date(req.body.date);
+  const staff = await staffSchema.findById(staffId);
 
-    const staff = await staffSchema.findById(staffId);
+  if (!staff) {
+    return res
+      .status(404)
+      .json({ message: `Staff with ID ${staffId} not found` });
+  }
 
-    if (!staff) {
-      return res
-        .status(404)
-        .json({ message: `Staff with ID ${staffId} not found` });
-    }
+  const attendanceIndex = staff.attendance.findIndex(
+    (record) => record.date.toDateString() === attendanceDate.toDateString()
+  );
 
-    const attendanceIndex = staff.attendance.findIndex(
-      (record) => record.date.toDateString() === attendanceDate.toDateString()
-    );
+  if (attendanceIndex !== -1) {
+    staff.attendance.splice(attendanceIndex, 1);
+    await staff.save();
 
-    if (attendanceIndex !== -1) {
-      staff.attendance.splice(attendanceIndex, 1);
-      await staff.save();
-
-      return res.status(200).json({
-        message: "Attendance deleted successfully",
-        status: "success",
-        data: staff,
-      });
-    } else {
-      return res.status(404).json({
-        message: `No attendance record found for date: ${attendanceDate}`,
-      });
-    }
-  } 
-
-// leave.js
-
-
+    return res.status(200).json({
+      message: "Attendance deleted successfully",
+      status: "success",
+      data: staff,
+    });
+  } else {
+    return res.status(404).json({
+      message: `No attendance record found for date: ${attendanceDate}`,
+    });
+  }
+};
 
 const getleaveRequest = async (req, res) => {
- 
-    const date = req.params.date
-   
-    if (date) {
-      leaveRequests = await Leave.find({
-       
-          $and: [
-            { company: req.company._id }, 
-            { applyOn : date }
-          
-          ]
-        })
-     
-     
+  const date = req.params.date;
+
+  if (!date) {
+    return res.status(400).json({ error: "Date parameter is required" });
+  }
+
+  try {
+  
+    const staffMembersWithLeaveData = await staffSchema.find({
+      $and: [{ company: req.company._id }],
+    })
+      .populate({
+        path: "leaves",
+        match: { applyOn: date },
+        model: "Leave", 
+      })
+      .select("name leaves"); 
+
+    if (!staffMembersWithLeaveData || staffMembersWithLeaveData.length === 0) {
+      return res.status(404).json({ error: "No staff members found with leave data for the specified date" });
     }
 
-
-    if (!leaveRequests || leaveRequests.length === 0) {
-      return res.status(404).json({ error: 'No leave requests found for the specified date' });
-    }
-
-    res.status(200).json({message:"Successfully leave Got",data:leaveRequests});
-  } 
-
-
-
-const approveleave =async (req, res) => {
  
+    const leaveDataForStaff = staffMembersWithLeaveData.reduce((result, staff) => {
+      const leaveData = staff.leaves.map((leave) => ({
+        _id: leave._id,
+        fromDate: leave.fromDate,
+        toDate: leave.toDate,
+        reason: leave.reason,
+        status: leave.status,
+        description: leave.description,
+        applyOn: leave.applyOn,
+        staffName: staff.name, 
+      }));
+
+      return result.concat(leaveData); 
+    }, []);
+
+    console.log(leaveDataForStaff);
+
+    res.status(200).json({
+      message: "Successfully leave Got",
+      data: leaveDataForStaff,
+    });
+  } catch (error) {
+    console.error("Error fetching leave requests:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while fetching leave requests" });
+  }
+};
+
+
+const approveleave = async (req, res) => {
+  const leaveId = req.params.leaveId;
+  const status = req.body.status;
+
+  const leaveRequest = await Leave.findByIdAndUpdate(
+    leaveId,
+    { status },
+    { new: true }
+  );
+
+  if (!leaveRequest) {
+    return res.status(404).json({ error: "Leave request not found" });
+  }
+
+  res
+    .status(200)
+    .json({
+      message: "Leave request updated successfully",
+      data: leaveRequest,
+    });
+};
+
+const deleteLeave =  async (req, res) => {
+  try {
     const leaveId = req.params.leaveId;
-    const status = req.body.status; 
 
-    const leaveRequest = await Leave.findByIdAndUpdate(
-      leaveId,
-      { status },
-      { new: true }
-    );
+    const deletedLeave = await Leave.findByIdAndDelete(leaveId);
 
-    if (!leaveRequest) {
-      return res.status(404).json({ error: 'Leave request not found' });
+    if (!deletedLeave) {
+      return res.status(404).json({ message: 'Leave request not found' });
     }
 
-    res.status(200).json({ message: 'Leave request updated successfully' ,data:leaveRequest});
-  } 
+    res.status(200).json({ message: 'Leave request deleted successfully', deletedLeave });
+  } catch (error) {
+    console.error('Error deleting leave request:', error);
+    res.status(500).json({ message: 'An error occurred while deleting the leave request' });
+  }
+}
+
 
 
 const getAttendanceByDate = async (req, res) => {
- 
-  
+  try {
     const currentDate = new Date(req.params.date);
     currentDate.setHours(0, 0, 0, 0);
 
-
-    
+    console.log("date ", currentDate);
 
     const attendanceRecords = await staffSchema.aggregate([
       {
         $match: {
-          company: req.company._id, 
+          company: req.company._id,
         },
       },
-      {
-        $unwind: "$attendance",
-      },
-      {
-        $match: {
-         
-        
-              "attendance.date": {
-                $gte: currentDate,
-                $lt: new Date(currentDate.getTime() + 24 * 60 * 60 * 1000 ),
-            
-            },
-           
-        },
-      },
-      
       {
         $lookup: {
-          from: "departments", 
+          from: "departments",
           localField: "department",
           foreignField: "_id",
           as: "departmentInfo",
@@ -667,110 +716,82 @@ const getAttendanceByDate = async (req, res) => {
       },
       {
         $project: {
-          _id: 0,
-          staffId: "$_id",
-          staffName: "$name",
-          department: { $arrayElemAt: ["$departmentInfo.title", 0] }, 
-          attendance: "$attendance",
+          _id: 1, 
+          name: "$name", 
+          department: { $arrayElemAt: ["$departmentInfo.title", 0] },
+          attendance: {
+            $filter: {
+              input: "$attendance",
+              as: "att",
+              cond: {
+                $and: [
+                  {
+                    $gte: ["$$att.date", currentDate], 
+                  },
+                  {
+                    $lt: ["$$att.date", new Date(currentDate.getTime() + 24 * 60 * 60 * 1000)], 
+                  },
+                ],
+              },
+            },
+          }
+          
         },
       },
     ]);
-    
+  
     
 
     res.status(200).json({
       message: "Attendance retrieved successfully",
       status: "success",
-      data:attendanceRecords,
+      data: attendanceRecords,
     });
-  } 
+  } catch (error) {
+    console.error('Error fetching attendance by date:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
 
 
 const getAttendance = async (req, res) => {
-
-const today = new Date();
-today.setHours(0, 0, 0, 0); // Set the time portion to midnight
-
-
-    
-
-    const attendanceRecords = await staffSchema.aggregate([
-      {
-        $match: {
-          company: req.company._id, 
-        },
-      },
-      {
-        $unwind: "$attendance",
-      },
-   
-      
-      {
-        $lookup: {
-          from: "departments", 
-          localField: "department",
-          foreignField: "_id",
-          as: "departmentInfo",
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          staffId: "$_id",
-          staffName: "$name",
-          department: { $arrayElemAt: ["$departmentInfo.title", 0] }, 
-          attendance: "$attendance",
-        },
-      },
-    ]);
-    
-    
-
-    res.status(200).json({
-      message: "Attendance retrieved successfully",
-      status: "success",
-      data:attendanceRecords,
-    });
-  } 
-
-
-const getAttendancebyDepartment = async (req, res) => {
   const today = new Date();
-  const currentDate = new Date().setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
 
-  const departmentName = req.query.department;
-
-  const department = await DepartmentSchema.findOne({ title: departmentName });
-
-  if (!department) {
-    return res.status(404).json({
-      message: "Department not found",
-      status: "error",
-    });
-  }
+ 
 
   const attendanceRecords = await staffSchema.aggregate([
     {
       $match: {
         company: req.company._id,
-        department: { $elemMatch: { $eq: department._id } }, // Match the department within the array
       },
     },
     {
-      $unwind: "$attendance",
+      $lookup: {
+        from: "departments",
+        localField: "department",
+        foreignField: "_id",
+        as: "departmentInfo",
+      },
+    },
+    {
+      $unwind: {
+        path: "$attendance",
+        preserveNullAndEmptyArrays: true, 
+      },
     },
     {
       $project: {
         _id: 0,
         staffId: "$_id",
         staffName: "$name",
-        department: department.title,
+        department: { $arrayElemAt: ["$departmentInfo.title", 0] },
         attendance: "$attendance",
       },
     },
   ]);
-
-  console.log(attendanceRecords);
 
   res.status(200).json({
     message: "Attendance retrieved successfully",
@@ -779,7 +800,131 @@ const getAttendancebyDepartment = async (req, res) => {
   });
 };
 
+
+const getAttendancebyDepartment = async (req, res) => {
   
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    const departments= req.query.department
+
+    console.log("date ", departments);
+
+    const attendanceRecords = await staffSchema.aggregate([
+      {
+        $match: {
+          company: req.company._id,
+        },
+      },
+      {
+        $lookup: {
+          from: "departments",
+          localField: "department",
+          foreignField: "_id",
+          as: "departmentInfo",
+        },
+      },
+      {
+        $project: {
+          _id: 1, 
+          name: "$name", 
+          department: { $arrayElemAt: ["$departmentInfo.title", 0] }, 
+          attendance: {
+            $filter: {
+              input: "$attendance",
+              as: "att",
+              cond: {
+                $and: [
+                  {
+                    $gte: ["$$att.date", currentDate], 
+                  },
+                  {
+                    $lt: ["$$att.date", new Date(currentDate.getTime() + 24 * 60 * 60 * 1000)], 
+                  },
+                ],
+              },
+            },
+          }
+          
+        },
+      },
+    ]);
+  
+    const newDepartment = attendanceRecords.filter((record) => record.department === departments);
+  
+
+  console.log("Attendance records: ", newDepartment);
+
+
+  res.status(200).json({
+    success: true,
+    data: newDepartment,
+  });
+};
+
+
+
+const getAttendancebyName = async (req, res) => {
+  
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    const names= req.query.name
+
+    console.log("date ", names);
+
+    const attendanceRecords = await staffSchema.aggregate([
+      {
+        $match: {
+          $and: [
+            { company: req.company._id },
+            { name: { $regex: new RegExp(names, "i") } },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "departments",
+          localField: "department",
+          foreignField: "_id",
+          as: "departmentInfo",
+        },
+      },
+      {
+        $project: {
+          _id: 1, 
+          name: "$name", 
+          department: { $arrayElemAt: ["$departmentInfo.title", 0] },
+          attendance: {
+            $filter: {
+              input: "$attendance",
+              as: "att",
+              cond: {
+                $and: [
+                  {
+                    $gte: ["$$att.date", currentDate], 
+                  },
+                  {
+                    $lt: ["$$att.date", new Date(currentDate.getTime() + 24 * 60 * 60 * 1000)],
+                  },
+                ],
+              },
+            },
+          }
+          
+        },
+      },
+    ]);
+  
+
+
+
+  console.log("Attendance records: ", attendanceRecords);
+
+
+  res.status(200).json({
+    success: true,
+    data: attendanceRecords,
+  });
+};
 
 module.exports = {
   createstaff,
@@ -803,11 +948,13 @@ module.exports = {
   markattendance,
   updateAttendance,
   deleteAttendance,
-
+  getAttendancebyName ,
   approveleave,
   getleaveRequest,
   getAttendanceByDate,
   getAttendance,
-  getAttendancebyDepartment
-
+  getAttendancebyDepartment,
+  updateDepartment,
+  getDepartmentById,
+  deleteLeave
 };

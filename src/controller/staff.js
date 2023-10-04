@@ -30,14 +30,22 @@ const loginStaff = async (req, res) => {
 
   const { email, password } = value;
 
+
+
+ 
+  
   const user = await staffSchema.findOne({ email });
-  if (!user) {
-    return res.status(401).json({ error: "Invalid username" });
-  }
+if (!user) {
+  console.log("User not found for email:", email);
+  return res.status(401).json({ error: "User not found" });
+}
+
   if (!(await bcrypt.compare(password, user.password))) {
     return res.status(401).json({ error: "Invalid password" });
   }
   const token = jwt.sign({ username: user.username }, "user");
+
+  console.log(user);
 
   res.json({ message: "Login successful", token, id: user._id });
 };
@@ -55,7 +63,7 @@ const getStaff = async (req, res) => {
       return res.status(404).json({ error: 'Staff not found' });
     }
 
-    const department = await Department.findOne({ _id: staff.department[0] });
+    const department = await Department.findOne({ _id: staff.department });
     if (!department) {
       return res.status(404).json({ error: 'Department not found' });
     }
@@ -121,11 +129,13 @@ const applyLeave =  async (req, res) => {
   
   const formattedDate = `${year}-${month}-${day}`;
 
+  console.log('req.body:', req.body);
+
 
   const leaveRequest = new Leave({
     fromDate: req.body.fromDate,
     toDate: req.body.toDate,
-    reason: req.body.reason,
+    reason: req.body.reason, 
     status: 'Pending', 
     description: req.body.description,
     applyOn: formattedDate,
@@ -135,7 +145,13 @@ const applyLeave =  async (req, res) => {
   });
 
   console.log("ever okk");
-  await leaveRequest.save();
+  try {
+    await leaveRequest.save();
+  } catch (error) {
+    console.error('Error saving leave request:', error);
+    res.status(500).json({ message: 'An error occurred while processing the leave request' });
+  }
+  
 
 
   const staffMember = await staffSchema.findById(staffId);
@@ -196,7 +212,7 @@ const getTaskById = async (req, res) => {
   
       const approvedLeaves = staff.leaves.filter(leave => leave.status === "approved");
 
-      res.status(200).json({message:"got approved leave successfully",data:approvedLeaves});
+      res.status(200).json({message:"Got approved leave successfully",data:approvedLeaves});
     } 
    
 
