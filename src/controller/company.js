@@ -227,6 +227,21 @@ const deleteDepartment = async (req, res) => {
   });
 };
 
+const getAllStaff = async (req, res) => {
+  try {
+    const allStaff = await staffSchema
+      .find({ company: req.company._id })
+      .populate("department");
+    res.status(200).json({
+      message: "Got all staffs successfully",
+      data: allStaff,
+      status: "success",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 const getStaff = async (req, res) => {
   const staff = await staffSchema.findById(req.params.id);
