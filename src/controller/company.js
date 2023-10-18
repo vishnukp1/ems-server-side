@@ -243,6 +243,7 @@ const getAllStaff = async (req, res) => {
   }
 };
 
+
 const getStaff = async (req, res) => {
   const staff = await staffSchema.findById(req.params.id);
   res.status(200).json({
@@ -251,6 +252,31 @@ const getStaff = async (req, res) => {
     status: "success",
   });
 };
+
+const getAllStaffPage = async (req, res) => {
+  const page = req.query.page || 1; 
+  const perPage = 5; 
+  try {
+    const totalStaffCount = await staffSchema.countDocuments({ company: req.company._id });
+    
+    const allStaff = await staffSchema
+      .find({ company: req.company._id })
+      .populate("department")
+      .skip((page - 1) * perPage) 
+      .limit(perPage); 
+    res.status(200).json({
+      message: "Got all staffs successfully",
+      data: allStaff,
+      status: "success",
+      currentPage: page,
+      totalPages: Math.ceil(totalStaffCount / perPage),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 
 const searchStaffByName = async (req, res) => {
   const { name } = req.query;
@@ -956,5 +982,6 @@ module.exports = {
   getAttendancebyDepartment,
   updateDepartment,
   getDepartmentById,
-  deleteLeave
+  deleteLeave,
+  getAllStaffPage
 };

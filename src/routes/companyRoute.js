@@ -32,6 +32,7 @@ const {
   updateDepartment,
   getDepartmentById,
   deleteLeave,
+  getAllStaffPage,
 } = require("../controller/company");
 const tryCatch = require("../middleware/tryCatchp");
 const upload = require("../middleware/multer.js");
@@ -91,5 +92,5 @@ router.get(
   verifyCompany,
   tryCatch(getAttendancebyName)
 );
-
+router.get('/company/staffPage',verifyCompany, getAllStaffPage);
 module.exports = router;
