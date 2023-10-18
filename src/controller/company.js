@@ -10,7 +10,10 @@ const nodemailer = require("nodemailer"); // Import the nodemailer library
 const randomstring = require("randomstring");
 const validate = require("../validation/schemaValidation");
 const Leave = require("../models/leaveSchema");
+const salarySchema= require("../models/salarySchema")
 const { log } = require("console");
+
+
 
 const registerCompany = async (req, res) => {
   const { error, value } = validate.companyValidate.validate(req.body);
@@ -940,11 +943,7 @@ const getAttendancebyName = async (req, res) => {
       },
     ]);
   
-
-
-
   console.log("Attendance records: ", attendanceRecords);
-
 
   res.status(200).json({
     success: true,
@@ -952,6 +951,22 @@ const getAttendancebyName = async (req, res) => {
   });
 };
 
+const paySalary = async (req, res) =>{ 
+
+ const salaryData = req.body;
+
+ const staffMember = await staffSchema.findById(req.params.id);
+
+ staffMember.salaries.push(salaryData);
+
+ await staffMember.save();
+
+ res.status(200).json({ message: "Salary data added successfully." });
+}
+  
+ 
+
+     
 module.exports = {
   createstaff,
   registerCompany,
@@ -983,5 +998,6 @@ module.exports = {
   updateDepartment,
   getDepartmentById,
   deleteLeave,
-  getAllStaffPage
+  getAllStaffPage,
+  paySalary
 };

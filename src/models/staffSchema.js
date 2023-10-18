@@ -86,11 +86,24 @@ const StaffSchema = new mongoose.Schema({
      
       salaries: [
         {
-          month: Number,
-          year: Number,
-          amount: Number,
-        
-        }
+          name: String,
+          salary: Number,
+          allowances: {
+            housingAllowance: Number,
+            transportAllowance: Number,
+            mealAllowance: Number,
+            // Add more allowance options as needed
+          },
+          deductions: {
+            taxDeduction: Number,
+            insuranceDeduction: Number,
+            loanDeduction: Number,
+            // Add more deduction options as needed
+          },
+          netSalary: Number,
+          month: String,
+          datePaid: Date,
+      }
       ]
 
 })
