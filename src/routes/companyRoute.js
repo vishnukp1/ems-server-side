@@ -34,6 +34,7 @@ const {
   deleteLeave,
   getAllStaffPage,
   paySalary,
+  paymentVerify,
 } = require("../controller/company");
 const tryCatch = require("../middleware/tryCatchp");
 const upload = require("../middleware/multer.js");
@@ -95,5 +96,5 @@ router.get(
 );
 router.get('/company/staffPage',verifyCompany, getAllStaffPage);
 router.post("/pay-salary/:id", tryCatch(paySalary));
-
+router.post("/verify-pament", tryCatch(paymentVerify));
 module.exports = router;
