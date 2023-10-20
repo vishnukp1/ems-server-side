@@ -13,7 +13,8 @@ app.use(morgan());
 
 // mongodb+srv://vishnutoanother:TJY72CMzB5zAq3ZE@cluster0.00v8gqd.mongodb.net/
 
-// mongodb://127.0.0.1:27017/mainproject1
+// mongodb://127.0.0.1:27017/mainproject1 
+
 
 mongoose
   .connect("mongodb+srv://vishnutoanother:TJY72CMzB5zAq3ZE@cluster0.00v8gqd.mongodb.net/", {
@@ -24,7 +25,7 @@ mongoose
   .then(() => console.log("DB Connection Successfull!"))  
   .catch((err) => {
     console.log(err);
-  });
+  }); 
  
   app.use("/",companyRouter)
   app.use("/",adminRouter)
@@ -32,4 +33,4 @@ mongoose
  
 app.listen(4444,()=>{
     console.log("server running 4444"); 
-})   
+})     
