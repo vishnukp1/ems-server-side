@@ -28,7 +28,7 @@ mongoose
   }); 
  
   app.use("/",companyRouter)
-  app.use("/",adminRouter)
+  // app.use("/",adminRouter)
   app.use("/",staffRouter)
  
 app.listen(4444,()=>{
