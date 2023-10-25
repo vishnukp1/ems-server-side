@@ -28,9 +28,9 @@ mongoose
   }); 
  
   
-  // app.use("/",companyRouter)
-  // app.use("/",adminRouter)
-  // app.use("/",staffRouter)
+  app.use("/",companyRouter)
+  app.use("/",adminRouter)
+  app.use("/",staffRouter)
  
 app.listen(4444,()=>{
     console.log("server running 4444"); 
