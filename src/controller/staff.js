@@ -29,10 +29,6 @@ const loginStaff = async (req, res) => {
   }
 
   const { email, password } = value;
-
-
-
- 
   
   const user = await staffSchema.findOne({ email });
 if (!user) {
