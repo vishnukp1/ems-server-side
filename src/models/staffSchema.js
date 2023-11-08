@@ -11,12 +11,10 @@ const StaffSchema = new mongoose.Schema({
          
      },
      company:
-    
       {
         ref: "company",
         type: mongoose.Schema.Types.ObjectId,
       },
-  
     email:{
          type:String,
          required:false

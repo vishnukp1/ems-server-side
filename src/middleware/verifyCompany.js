@@ -1,3 +1,5 @@
+// multi-tenant or role-based system.
+
 const CompanySchema=require("../models/companySchema")
 const verifyCompany = async (req, res, next) => {
   
