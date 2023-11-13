@@ -15,9 +15,9 @@ app.use(morgan());
 
 // mongodb://127.0.0.1:27017/mainproject1 
 
-
+ 
 mongoose
-  .connect("mongodb+srv://vishnutoanother:TJY72CMzB5zAq3ZE@cluster0.00v8gqd.mongodb.net/", {
+  .connect("mongodb+srv://newuser2000:test1234@cluster0.00v8gqd.mongodb.net/", {
     useNewUrlParser: true,
 
     useUnifiedTopology: true,
