@@ -1,15 +1,15 @@
 const express = require("express")
 const app = express()
-const cors= require("cors")
-const morgan = require("morgan")
+// const cors= require("cors")
+// const morgan = require("morgan")
 const multer = require("multer")
 const mongoose = require("mongoose")
 const companyRouter = require ("./src/routes/companyRoute")
 const adminRouter = require ("./src/routes/adminRoutes")
 const staffRouter = require ("./src/routes/staffRoute")
 app.use(express.json());
-app.use(cors());
-app.use(morgan()); 
+// app.use(cors());
+// app.use(morgan()); 
 
 // mongodb+srv://vishnutoanother:TJY72CMzB5zAq3ZE@cluster0.00v8gqd.mongodb.net/
  
