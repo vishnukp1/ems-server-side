@@ -9,7 +9,7 @@ const verifyCompany = async (req, res, next) => {
     if (!company) {
       return res.status(404).json({ message: 'Company not found' });
     }
-  
+    
     req.company = company;
     next();
   };
