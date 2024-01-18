@@ -22,7 +22,6 @@ const {
   markattendance,
   updateAttendance,
   deleteAttendance,
-
   getAttendancebyName,
   approveleave,
   getleaveRequest,
@@ -97,4 +96,5 @@ router.get("/attendance/name", verifyCompany, tryCatch(getAttendancebyName));
 router.get("/company/staffPage", verifyCompany, getAllStaffPage);
 router.post("/pay-salary/:id", tryCatch(paySalary));
 router.post("/verify-pament", tryCatch(paymentVerify));
+
 module.exports = router;

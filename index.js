@@ -1,15 +1,15 @@
 const express = require("express")
 const app = express()
-// const cors= require("cors")
-// const morgan = require("morgan")
+const cors= require("cors")
+const morgan = require("morgan")
 const multer = require("multer")
 const mongoose = require("mongoose")
 const companyRouter = require ("./src/routes/companyRoute")
 const adminRouter = require ("./src/routes/adminRoutes")
 const staffRouter = require ("./src/routes/staffRoute")
 app.use(express.json());
-// app.use(cors());
-// app.use(morgan()); 
+app.use(cors());
+app.use(morgan()); 
 
 // mongodb+srv://vishnutoanother:TJY72CMzB5zAq3ZE@cluster0.00v8gqd.mongodb.net/
  
@@ -17,7 +17,7 @@ app.use(express.json());
 
  
 mongoose
-  .connect("mongodb+srv://newuser2000:test1234@cluster0.00v8gqd.mongodb.net/", {
+  .connect("mongodb://127.0.0.1:27017/mainproject1", {
     useNewUrlParser: true,
 
     useUnifiedTopology: true,
@@ -32,6 +32,6 @@ mongoose
   app.use("/",adminRouter)
   app.use("/",staffRouter)
  
-app.listen(4445,()=>{
+app.listen(4444,()=>{
     console.log("server running 4444"); 
 })     
