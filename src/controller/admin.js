@@ -21,14 +21,12 @@ const loginAdmin = async (req, res) => {
   }
   const token = jwt.sign({ username: user.username }, "user");
 
-  res
-    .status(200)
-    .json({
-      message: "Login successful",
-      status: "seccuss",
-      token,
-      companyId: user._id,
-    });
+  res.status(200).json({
+    message: "Login successful",
+    status: "seccuss",
+    token,
+    companyId: user._id,
+  });
 };
 
 const createCompany = async (req, res) => {

@@ -218,9 +218,6 @@ const getDepartmentById = async (req, res) => {
   }
 };
 
-
-
-
 const deleteDepartment = async (req, res) => {
   const department = await DepartmentSchema.findByIdAndDelete(req.params.id);
   res.status(200).json({
