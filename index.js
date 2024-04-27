@@ -15,15 +15,15 @@ app.use(morgan());
  
 // mongodb://127.0.0.1:27017/mainproject1 
 
- 
+  
 mongoose
-  .connect("mongodb://127.0.0.1:27017/mainproject1", {
+  .connect("mongodb+srv://vishnutoanother:TJY72CMzB5zAq3ZE@cluster0.00v8gqd.mongodb.net/ems-app", {
     useNewUrlParser: true,
 
     useUnifiedTopology: true,
-  })
+  }) 
   .then(() => console.log("DB Connection Successfull!"))  
-  .catch((err) => {
+  .catch((err) => { 
     console.log(err);
   }); 
  
