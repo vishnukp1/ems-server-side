@@ -8,7 +8,7 @@ const LeaveSchema = new mongoose.Schema({
   description: String,
   applyOn: Date,
   company: {
-    ref: "Company", 
+    ref: "Company",
     type: mongoose.Schema.Types.ObjectId,
   },
   staff: {
