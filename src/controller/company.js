@@ -10,10 +10,8 @@ const nodemailer = require("nodemailer"); // Import the nodemailer library
 const randomstring = require("randomstring");
 const validate = require("../validation/schemaValidation");
 const Leave = require("../models/leaveSchema");
-const salarySchema= require("../models/salarySchema")
+const salarySchema = require("../models/salarySchema");
 const { log } = require("console");
-
-
 
 const registerCompany = async (req, res) => {
   const { error, value } = validate.companyValidate.validate(req.body);
@@ -53,7 +51,7 @@ const loginUser = async (req, res) => {
 
   const { email, password } = value;
 
-  const user = await companySchema.findOne({ email});
+  const user = await companySchema.findOne({ email });
   if (!user) {
     return res.status(401).json({ error: "Invalid username" });
   }
@@ -106,7 +104,6 @@ const createstaff = async (req, res) => {
 
   res.json({ staff });
 
-
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -115,14 +112,12 @@ const createstaff = async (req, res) => {
     },
   });
 
-
   const mailOptions = {
     from: process.env.email,
     to: email,
     subject: "Your New Password",
     text: `Your new password is: ${password}`,
   };
-
 
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
@@ -143,8 +138,6 @@ const createstaff = async (req, res) => {
     }
   });
 };
-
-
 
 const createdepartment = async (req, res) => {
   const { title } = req.body;
@@ -183,7 +176,6 @@ const updateDepartment = async (req, res) => {
   }
 };
 
-
 const getDepartment = async (req, res) => {
   const department = await DepartmentSchema.find({ company: req.company._id });
 
@@ -198,9 +190,9 @@ const getDepartmentById = async (req, res) => {
   try {
     const department = await DepartmentSchema.findOne({
       company: req.company._id,
-      _id: req.params.id
+      _id: req.params.id,
     });
-    
+
     if (!department) {
       return res.status(404).json({ error: "Department not found" });
     }
@@ -208,9 +200,7 @@ const getDepartmentById = async (req, res) => {
     console.log(department);
 
     res.status(200).json({
-   
-     department
-     
+      department,
     });
   } catch (error) {
     console.error("Error fetching department:", error);
@@ -243,7 +233,6 @@ const getAllStaff = async (req, res) => {
   }
 };
 
-
 const getStaff = async (req, res) => {
   const staff = await staffSchema.findById(req.params.id);
   res.status(200).json({
@@ -254,16 +243,18 @@ const getStaff = async (req, res) => {
 };
 
 const getAllStaffPage = async (req, res) => {
-  const page = req.query.page || 1; 
-  const perPage = 5; 
+  const page = req.query.page || 1;
+  const perPage = 5;
   try {
-    const totalStaffCount = await staffSchema.countDocuments({ company: req.company._id });
-    
+    const totalStaffCount = await staffSchema.countDocuments({
+      company: req.company._id,
+    });
+
     const allStaff = await staffSchema
       .find({ company: req.company._id })
       .populate("department")
-      .skip((page - 1) * perPage) 
-      .limit(perPage); 
+      .skip((page - 1) * perPage)
+      .limit(perPage);
     res.status(200).json({
       message: "Got all staffs successfully",
       data: allStaff,
@@ -276,7 +267,6 @@ const getAllStaffPage = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
 
 const searchStaffByName = async (req, res) => {
   const { name } = req.query;
@@ -375,7 +365,6 @@ const getTaskById = async (req, res) => {
   }
 };
 
-
 const getAllTasks = async (req, res) => {
   const allStaffsTasks = await staffSchema.aggregate([
     {
@@ -410,8 +399,6 @@ const getAllTasks = async (req, res) => {
     res.json({ tasks: [] });
   }
 };
-
-
 
 const searchTaskByName = async (req, res) => {
   const { name } = req.query;
@@ -492,12 +479,8 @@ const updateTask = async (req, res) => {
   }
 };
 
-
-
-
 const markattendance = async (req, res) => {
-  const attendanceData = req.body; 
-
+  const attendanceData = req.body;
 
   if (!Array.isArray(attendanceData)) {
     return res.status(400).json({ error: "Invalid attendance data format" });
@@ -505,33 +488,28 @@ const markattendance = async (req, res) => {
 
   const insertedAttendanceRecords = [];
 
-
   for (const record of attendanceData) {
     const { staffId, TimeIn, TimeOut, status, date } = record;
     const attendanceDate = new Date(date);
 
-
     const staff = await staffSchema.findById(staffId).populate("department");
 
-   
-
     if (!staff) {
-      return res.status(404).json({ error: `Staff member with ID ${staffId} not found` });
+      return res
+        .status(404)
+        .json({ error: `Staff member with ID ${staffId} not found` });
     }
 
-  
     const existingAttendanceRecord = staff.attendance.find((record) => {
       return record.date.toDateString() === attendanceDate.toDateString();
     });
 
     console.log(existingAttendanceRecord);
     if (existingAttendanceRecord) {
-   
       existingAttendanceRecord.status = status;
       existingAttendanceRecord.TimeIn = new Date(TimeIn);
       existingAttendanceRecord.TimeOut = new Date(TimeOut);
     } else {
-     
       const newAttendanceRecord = {
         date: attendanceDate,
         TimeIn: new Date(TimeIn),
@@ -541,7 +519,6 @@ const markattendance = async (req, res) => {
 
       staff.attendance.push(newAttendanceRecord);
     }
-
 
     await staff.save();
 
@@ -554,10 +531,13 @@ const markattendance = async (req, res) => {
     });
   }
 
-  res.status(201).json({ message: "Attendance registered successfully", data: insertedAttendanceRecords });
-}
-
-
+  res
+    .status(201)
+    .json({
+      message: "Attendance registered successfully",
+      data: insertedAttendanceRecords,
+    });
+};
 
 const updateAttendance = async (req, res) => {
   const staffId = req.params.staffId;
@@ -632,36 +612,43 @@ const getleaveRequest = async (req, res) => {
   }
 
   try {
-  
-    const staffMembersWithLeaveData = await staffSchema.find({
-      $and: [{ company: req.company._id }],
-    })
+    const staffMembersWithLeaveData = await staffSchema
+      .find({
+        $and: [{ company: req.company._id }],
+      })
       .populate({
         path: "leaves",
         match: { applyOn: date },
-        model: "Leave", 
+        model: "Leave",
       })
-      .select("name leaves"); 
+      .select("name leaves");
 
     if (!staffMembersWithLeaveData || staffMembersWithLeaveData.length === 0) {
-      return res.status(404).json({ error: "No staff members found with leave data for the specified date" });
+      return res
+        .status(404)
+        .json({
+          error:
+            "No staff members found with leave data for the specified date",
+        });
     }
 
- 
-    const leaveDataForStaff = staffMembersWithLeaveData.reduce((result, staff) => {
-      const leaveData = staff.leaves.map((leave) => ({
-        _id: leave._id,
-        fromDate: leave.fromDate,
-        toDate: leave.toDate,
-        reason: leave.reason,
-        status: leave.status,
-        description: leave.description,
-        applyOn: leave.applyOn,
-        staffName: staff.name, 
-      }));
+    const leaveDataForStaff = staffMembersWithLeaveData.reduce(
+      (result, staff) => {
+        const leaveData = staff.leaves.map((leave) => ({
+          _id: leave._id,
+          fromDate: leave.fromDate,
+          toDate: leave.toDate,
+          reason: leave.reason,
+          status: leave.status,
+          description: leave.description,
+          applyOn: leave.applyOn,
+          staffName: staff.name,
+        }));
 
-      return result.concat(leaveData); 
-    }, []);
+        return result.concat(leaveData);
+      },
+      []
+    );
 
     console.log(leaveDataForStaff);
 
@@ -677,7 +664,6 @@ const getleaveRequest = async (req, res) => {
   }
 };
 
-
 const approveleave = async (req, res) => {
   const leaveId = req.params.leaveId;
   const status = req.body.status;
@@ -692,32 +678,32 @@ const approveleave = async (req, res) => {
     return res.status(404).json({ error: "Leave request not found" });
   }
 
-  res
-    .status(200)
-    .json({
-      message: "Leave request updated successfully",
-      data: leaveRequest,
-    });
+  res.status(200).json({
+    message: "Leave request updated successfully",
+    data: leaveRequest,
+  });
 };
 
-const deleteLeave =  async (req, res) => {
+const deleteLeave = async (req, res) => {
   try {
     const leaveId = req.params.leaveId;
 
     const deletedLeave = await Leave.findByIdAndDelete(leaveId);
 
     if (!deletedLeave) {
-      return res.status(404).json({ message: 'Leave request not found' });
+      return res.status(404).json({ message: "Leave request not found" });
     }
 
-    res.status(200).json({ message: 'Leave request deleted successfully', deletedLeave });
+    res
+      .status(200)
+      .json({ message: "Leave request deleted successfully", deletedLeave });
   } catch (error) {
-    console.error('Error deleting leave request:', error);
-    res.status(500).json({ message: 'An error occurred while deleting the leave request' });
+    console.error("Error deleting leave request:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while deleting the leave request" });
   }
-}
-
-
+};
 
 const getAttendanceByDate = async (req, res) => {
   try {
@@ -742,8 +728,8 @@ const getAttendanceByDate = async (req, res) => {
       },
       {
         $project: {
-          _id: 1, 
-          name: "$name", 
+          _id: 1,
+          name: "$name",
           department: { $arrayElemAt: ["$departmentInfo.title", 0] },
           attendance: {
             $filter: {
@@ -752,21 +738,21 @@ const getAttendanceByDate = async (req, res) => {
               cond: {
                 $and: [
                   {
-                    $gte: ["$$att.date", currentDate], 
+                    $gte: ["$$att.date", currentDate],
                   },
                   {
-                    $lt: ["$$att.date", new Date(currentDate.getTime() + 24 * 60 * 60 * 1000)], 
+                    $lt: [
+                      "$$att.date",
+                      new Date(currentDate.getTime() + 24 * 60 * 60 * 1000),
+                    ],
                   },
                 ],
               },
             },
-          }
-          
+          },
         },
       },
     ]);
-  
-    
 
     res.status(200).json({
       message: "Attendance retrieved successfully",
@@ -774,19 +760,14 @@ const getAttendanceByDate = async (req, res) => {
       data: attendanceRecords,
     });
   } catch (error) {
-    console.error('Error fetching attendance by date:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Error fetching attendance by date:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
-
 
 const getAttendance = async (req, res) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
- 
 
   const attendanceRecords = await staffSchema.aggregate([
     {
@@ -805,7 +786,7 @@ const getAttendance = async (req, res) => {
     {
       $unwind: {
         path: "$attendance",
-        preserveNullAndEmptyArrays: true, 
+        preserveNullAndEmptyArrays: true,
       },
     },
     {
@@ -826,60 +807,60 @@ const getAttendance = async (req, res) => {
   });
 };
 
-
 const getAttendancebyDepartment = async (req, res) => {
-  
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
-    const departments= req.query.department
+  const currentDate = new Date();
+  currentDate.setHours(0, 0, 0, 0);
+  const departments = req.query.department;
 
-    console.log("date ", departments);
+  console.log("date ", departments);
 
-    const attendanceRecords = await staffSchema.aggregate([
-      {
-        $match: {
-          company: req.company._id,
-        },
+  const attendanceRecords = await staffSchema.aggregate([
+    {
+      $match: {
+        company: req.company._id,
       },
-      {
-        $lookup: {
-          from: "departments",
-          localField: "department",
-          foreignField: "_id",
-          as: "departmentInfo",
-        },
+    },
+    {
+      $lookup: {
+        from: "departments",
+        localField: "department",
+        foreignField: "_id",
+        as: "departmentInfo",
       },
-      {
-        $project: {
-          _id: 1, 
-          name: "$name", 
-          department: { $arrayElemAt: ["$departmentInfo.title", 0] }, 
-          attendance: {
-            $filter: {
-              input: "$attendance",
-              as: "att",
-              cond: {
-                $and: [
-                  {
-                    $gte: ["$$att.date", currentDate], 
-                  },
-                  {
-                    $lt: ["$$att.date", new Date(currentDate.getTime() + 24 * 60 * 60 * 1000)], 
-                  },
-                ],
-              },
+    },
+    {
+      $project: {
+        _id: 1,
+        name: "$name",
+        department: { $arrayElemAt: ["$departmentInfo.title", 0] },
+        attendance: {
+          $filter: {
+            input: "$attendance",
+            as: "att",
+            cond: {
+              $and: [
+                {
+                  $gte: ["$$att.date", currentDate],
+                },
+                {
+                  $lt: [
+                    "$$att.date",
+                    new Date(currentDate.getTime() + 24 * 60 * 60 * 1000),
+                  ],
+                },
+              ],
             },
-          }
-          
+          },
         },
       },
-    ]);
-  
-    const newDepartment = attendanceRecords.filter((record) => record.department === departments);
-  
+    },
+  ]);
+
+  const newDepartment = attendanceRecords.filter(
+    (record) => record.department === departments
+  );
 
   console.log("Attendance records: ", newDepartment);
-
 
   res.status(200).json({
     success: true,
@@ -887,59 +868,58 @@ const getAttendancebyDepartment = async (req, res) => {
   });
 };
 
-
-
 const getAttendancebyName = async (req, res) => {
-  
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
-    const names= req.query.name
+  const currentDate = new Date();
+  currentDate.setHours(0, 0, 0, 0);
+  const names = req.query.name;
 
-    console.log("date ", names);
+  console.log("date ", names);
 
-    const attendanceRecords = await staffSchema.aggregate([
-      {
-        $match: {
-          $and: [
-            { company: req.company._id },
-            { name: { $regex: new RegExp(names, "i") } },
-          ],
-        },
+  const attendanceRecords = await staffSchema.aggregate([
+    {
+      $match: {
+        $and: [
+          { company: req.company._id },
+          { name: { $regex: new RegExp(names, "i") } },
+        ],
       },
-      {
-        $lookup: {
-          from: "departments",
-          localField: "department",
-          foreignField: "_id",
-          as: "departmentInfo",
-        },
+    },
+    {
+      $lookup: {
+        from: "departments",
+        localField: "department",
+        foreignField: "_id",
+        as: "departmentInfo",
       },
-      {
-        $project: {
-          _id: 1, 
-          name: "$name", 
-          department: { $arrayElemAt: ["$departmentInfo.title", 0] },
-          attendance: {
-            $filter: {
-              input: "$attendance",
-              as: "att",
-              cond: {
-                $and: [
-                  {
-                    $gte: ["$$att.date", currentDate], 
-                  },
-                  {
-                    $lt: ["$$att.date", new Date(currentDate.getTime() + 24 * 60 * 60 * 1000)],
-                  },
-                ],
-              },
+    },
+    {
+      $project: {
+        _id: 1,
+        name: "$name",
+        department: { $arrayElemAt: ["$departmentInfo.title", 0] },
+        attendance: {
+          $filter: {
+            input: "$attendance",
+            as: "att",
+            cond: {
+              $and: [
+                {
+                  $gte: ["$$att.date", currentDate],
+                },
+                {
+                  $lt: [
+                    "$$att.date",
+                    new Date(currentDate.getTime() + 24 * 60 * 60 * 1000),
+                  ],
+                },
+              ],
             },
-          }
-          
+          },
         },
       },
-    ]);
-  
+    },
+  ]);
+
   console.log("Attendance records: ", attendanceRecords);
 
   res.status(200).json({
@@ -948,60 +928,56 @@ const getAttendancebyName = async (req, res) => {
   });
 };
 
-const paySalary = async (req, res) =>{ 
+const paySalary = async (req, res) => {
+  const salaryData = req.body;
 
- const salaryData = req.body;
+  const staffMember = await staffSchema.findById(req.params.id);
 
- const staffMember = await staffSchema.findById(req.params.id);
+  staffMember.salaries.push(salaryData);
 
- staffMember.salaries.push(salaryData);
+  await staffMember.save();
 
- await staffMember.save();
+  const instance = new Razorpay({
+    key_id: process.env.KEY_ID,
+    key_secret: process.env.KEY_SECRET,
+  });
 
- const instance = new Razorpay({
-  key_id: process.env.KEY_ID,
-  key_secret: process.env.KEY_SECRET,
-});
+  const options = {
+    amount: req.body.salary * 100,
+    currency: "INR",
+    receipt: crypto.randomBytes(10).toString("hex"),
+  };
 
-const options = {
-  amount: req.body.salary * 100,
-  currency: "INR",
-  receipt: crypto.randomBytes(10).toString("hex"),
-};  
+  instance.orders.create(options, (error, order) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: "Something Went Wrong!" });
+    }
+    res.status(200).json({ message: "Salary data added successfully." });
+  });
+};
 
-instance.orders.create(options, (error, order) => {
-  if (error) {
+const paymentVerify = async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+      req.body;
+    const sign = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSign = crypto
+      .createHmac("sha256", process.env.KEY_SECRET)
+      .update(sign.toString())
+      .digest("hex");
+
+    if (razorpay_signature === expectedSign) {
+      return res.status(200).json({ message: "Payment verified successfully" });
+    } else {
+      return res.status(400).json({ message: "Invalid signature sent!" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Internal Server Error!" });
     console.log(error);
-    return res.status(500).json({ message: "Something Went Wrong!" });
   }
-  res.status(200).json({ message: "Salary data added successfully."  });
-});
+};
 
-}
-  
-const paymentVerify=async (req, res) => {
-	try {
-		const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
-			req.body;
-		const sign = razorpay_order_id + "|" + razorpay_payment_id;
-		const expectedSign = crypto
-			.createHmac("sha256", process.env.KEY_SECRET)
-			.update(sign.toString())
-			.digest("hex");
-
-		if (razorpay_signature === expectedSign) {
-			return res.status(200).json({ message: "Payment verified successfully" });
-		} else {
-			return res.status(400).json({ message: "Invalid signature sent!" });
-		}
-	} catch (error) {
-		res.status(500).json({ message: "Internal Server Error!" });
-		console.log(error);
-	}
-}
- 
-
-     
 module.exports = {
   createstaff,
   registerCompany,
@@ -1024,7 +1000,7 @@ module.exports = {
   markattendance,
   updateAttendance,
   deleteAttendance,
-  getAttendancebyName ,
+  getAttendancebyName,
   approveleave,
   getleaveRequest,
   getAttendanceByDate,
@@ -1035,5 +1011,5 @@ module.exports = {
   deleteLeave,
   getAllStaffPage,
   paySalary,
-  paymentVerify
+  paymentVerify,
 };
